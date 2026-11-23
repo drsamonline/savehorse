@@ -250,12 +250,15 @@ fn plan(paths: &[PathBuf], options: &RenameOptions) -> Result<Vec<RenameItem>> {
             None => new_stem,
         };
 
+        let changed = original_name != new_name;
+        let new_path = parent.join(&new_name).to_string_lossy().to_string();
+
         planned.push(RenameItem {
             original_path: file.to_string_lossy().to_string(),
-            original_name: original_name.clone(),
-            new_path: parent.join(&new_name).to_string_lossy().to_string(),
+            original_name,
             new_name,
-            changed: original_name != new_name,
+            new_path,
+            changed,
         });
     }
 
