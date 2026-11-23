@@ -119,7 +119,13 @@ jobs:
           cargo run --quiet -- arc test smoke/tree.zip
           cargo run --quiet -- arc extract smoke/tree.zip --out smoke/unzipped
           test -f smoke/unzipped/iso/readme.txt
-          cargo run --quiet -- arc torrent smoke/a.txt
+          # arc torrent reads a .torrent, so build a minimal well-formed one
+          python3 -c "
+          pieces = b'\x00' * 20
+          info = (b'd6:lengthi5e4:name5:a.txt12:piece lengthi16384e6:pieces20:' + pieces + b'e')
+          data = b'd8:announce18:http://tracker/ann4:info' + info + b'e'
+          open('smoke/test.torrent','wb').write(data)"
+          cargo run --quiet -- arc torrent smoke/test.torrent | grep -q "a.txt"
           cargo run --quiet -- arc split smoke/test.iso --size 16k --out smoke/parts
           cargo run --quiet -- arc join smoke/parts/test.iso.manifest.json --out smoke/rejoined.iso
           cmp smoke/test.iso smoke/rejoined.iso
