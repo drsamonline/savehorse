@@ -57,13 +57,13 @@ export async function runOperation(request: RunRequest): Promise<RunResult> {
     if (captured) {
       return {
         text: captured,
-        // The snapshot holds the text report only, so the JSON tab says so
-        // rather than dressing the same text up as data.
-        json: JSON.stringify(
-          { note: "static preview: captured text output only", text: captured },
-          null,
-          2,
-        ),
+        // The snapshot holds the text report only. Dressing that text up as
+        // a JSON object made the tab look like broken output, so it says what
+        // is actually true instead.
+        json:
+          "This preview captured the text report only.\n\n" +
+          "JSON output comes from the Rust core — run the operation in the " +
+          "app to see it.",
         dry_run: captured.toLowerCase().includes("preview"),
       };
     }
