@@ -19,7 +19,7 @@
 //! name are now disambiguated instead of colliding.
 
 use serde::{Deserialize, Serialize};
-use shavehorse_core::{Error, Result};
+use savehorse_core::{Error, Result};
 use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
