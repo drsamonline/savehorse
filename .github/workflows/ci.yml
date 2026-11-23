@@ -233,7 +233,8 @@ jobs:
           # Ask the manifest which operation is still planned, rather than
           # naming one here. This check went stale three times as operations
           # were ported.
-          planned="$(cargo run --quiet -- ops | awk '$2 == "planned" { print $1; exit }')"
+          cargo run --quiet -- ops > ops.txt
+          planned="$(awk '$2 == "planned" { print $1; exit }' ops.txt)"
           echo "checking that ${planned} refuses"
           if cargo run --quiet -- "${planned%%.*}" "${planned#*.}" 2>err.txt; then
             echo "planned operation should have failed"

@@ -18,7 +18,22 @@ use savehorse_runner::{execute, Request};
 /// switch to an operation does not mean remembering to edit this file.
 const GLOBAL_SWITCHES: &[&str] = &["json", "dry-run", "help", "version"];
 
+/// Rust ignores SIGPIPE by default, so writing to a closed pipe returns an
+/// error and `println!` panics on it. That turns `savehorse ops | head` into a
+/// stack trace. Restoring the default disposition makes it exit quietly, the
+/// way every other command line tool does.
+#[cfg(unix)]
+fn restore_sigpipe() {
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+}
+
+#[cfg(not(unix))]
+fn restore_sigpipe() {}
+
 fn main() -> ExitCode {
+    restore_sigpipe();
     match run() {
         Ok(code) => code,
         Err(e) => {
