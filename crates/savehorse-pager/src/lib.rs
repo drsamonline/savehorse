@@ -328,7 +328,7 @@ mod backend {
         Ok((target, "win32".to_string()))
     }
 
-    pub fn move(handle_text: &str, rect: Rect) -> Result<(Rect, String)> {
+    pub fn move_to(handle_text: &str, rect: Rect) -> Result<(Rect, String)> {
         let hwnd = parse_handle(handle_text)?;
         unsafe {
             SetWindowPos(
@@ -475,7 +475,7 @@ mod backend {
         Ok((target, "wmctrl".to_string()))
     }
 
-    pub fn move(handle: &str, rect: Rect) -> Result<(Rect, String)> {
+    pub fn move_to(handle: &str, rect: Rect) -> Result<(Rect, String)> {
         let geometry = format!(
             "0,{},{},{},{}",
             rect.left,
@@ -564,7 +564,7 @@ mod backend {
         Err(unsupported("window snapping"))
     }
 
-    pub fn move(_handle: &str, _rect: Rect) -> Result<(Rect, String)> {
+    pub fn move_to(_handle: &str, _rect: Rect) -> Result<(Rect, String)> {
         Err(unsupported("moving a window to exact coordinates"))
     }
 
@@ -591,7 +591,7 @@ mod backend {
     pub fn snap(_h: &str, _p: &str) -> Result<(Rect, String)> {
         Err(unsupported("window snapping"))
     }
-    pub fn move(_h: &str, _r: Rect) -> Result<(Rect, String)> {
+    pub fn move_to(_h: &str, _r: Rect) -> Result<(Rect, String)> {
         Err(unsupported("moving a window"))
     }
     pub fn switch(_h: &str) -> Result<String> {
@@ -627,7 +627,7 @@ pub fn snap(handle: &str, position: &str) -> Result<SnapReport> {
 }
 
 pub fn move_window(handle: &str, rect: Rect) -> Result<SnapReport> {
-    let (rect, backend_name) = backend::move(handle, rect)?;
+    let (rect, backend_name) = backend::move_to(handle, rect)?;
     Ok(SnapReport {
         handle: handle.to_string(),
         position: "explicit".to_string(),
