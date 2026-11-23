@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build
+        run: cargo build --workspace --all-targets --verbose
+
+      - name: Test
+        run: cargo test --workspace --verbose
+
+      - name: Smoke test the CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo run --quiet -- --version
+          cargo run --quiet -- modules
+          cargo run --quiet -- ops sift
+          mkdir -p smoke/nested
+          printf 'alpha beta\nsecond line alpha\n' > smoke/a.txt
+          printf 'alpha beta\nsecond line alpha\n' > smoke/nested/copy.txt
+          printf 'nothing here\n' > smoke/b.txt
+          cargo run --quiet -- sift search alpha smoke
+          cargo run --quiet -- sift strings smoke/a.txt --min-len 4
+          cargo run --quiet -- sift replace beta gamma smoke --dry-run
+          cargo run --quiet -- scout catalog smoke --format json
+          cargo run --quiet -- scout duplicates smoke
+          cargo run --quiet -- scout clean smoke

@@ -1,0 +1,21 @@
+[package]
+name = "shavehorse-cli"
+description = "The savehorse command line: one binary, thirteen modules, every operation reachable as `savehorse <module> <op>`."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "savehorse"
+path = "src/main.rs"
+
+[dependencies]
+shavehorse-core.workspace = true
+shavehorse-registry.workspace = true
+shavehorse-sift.workspace = true
+shavehorse-scout.workspace = true
+serde.workspace = true
+serde_json.workspace = true

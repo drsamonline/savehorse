@@ -1,0 +1,34 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/shavehorse-core",
+    "crates/shavehorse-registry",
+    "crates/shavehorse-sift",
+    "crates/shavehorse-scout",
+    "apps/shavehorse-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "PolyForm-Noncommercial-1.0.0"
+repository = "https://github.com/drsamonline/savehorse"
+authors = ["Dr Sohil Momin"]
+
+[workspace.dependencies]
+shavehorse-core = { path = "crates/shavehorse-core" }
+shavehorse-registry = { path = "crates/shavehorse-registry" }
+shavehorse-sift = { path = "crates/shavehorse-sift" }
+shavehorse-scout = { path = "crates/shavehorse-scout" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+sha2 = "0.10"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
