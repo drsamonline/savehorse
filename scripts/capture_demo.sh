@@ -25,6 +25,12 @@ if [ ! -x "$bin" ]; then
   echo "could not find the savehorse binary (looked for target/debug/savehorse[.exe])" >&2
   exit 1
 fi
+# The script moves into a temporary directory to build fixtures, so the binary
+# path has to be absolute before that happens.
+case "$bin" in
+  /*) ;;
+  *) bin="$root/$bin" ;;
+esac
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 cd "$work"

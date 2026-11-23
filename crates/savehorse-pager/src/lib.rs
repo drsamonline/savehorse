@@ -140,6 +140,9 @@ pub fn launch(program: &str, arguments: &[String]) -> Result<LaunchReport> {
     })
 }
 
+/// Only reached on platforms whose backend cannot do something. Windows
+/// implements all of it, so the function is unused there.
+#[allow(dead_code)]
 fn unsupported(what: &str) -> Error {
     Error::Invalid(format!(
         "{} is not supported on {} — see the capability matrix for what each platform can do",
@@ -173,7 +176,6 @@ mod backend {
     const SW_RESTORE: i32 = 9;
     const GWL_EXSTYLE: i32 = -20;
     const WS_EX_LAYERED: isize = 0x0008_0000;
-    const WS_EX_TOPMOST: isize = 0x0000_0008;
     const LWA_ALPHA: u32 = 0x0000_0002;
     const HWND_TOPMOST: HWND = -1;
     const HWND_NOTOPMOST: HWND = -2;
