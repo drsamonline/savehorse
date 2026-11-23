@@ -458,8 +458,17 @@ mod tests {
         assert!(report.dry_run);
         assert_eq!(report.changed, 1);
         assert_eq!(report.items[0].new_name, "HELLO.txt");
-        assert!(dir.join("hello.txt").exists(), "preview must not rename");
-        assert!(!dir.join("HELLO.txt").exists());
+
+        // Compare exact entry names rather than asking exists(): on a
+        // case-insensitive filesystem "HELLO.txt".exists() is true while only
+        // hello.txt is there, which would make this test lie on macOS and
+        // Windows.
+        let names: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .collect();
+        assert_eq!(names, vec!["hello.txt".to_string()], "preview must not rename");
         let _ = fs::remove_dir_all(&dir);
     }
 
