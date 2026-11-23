@@ -166,20 +166,28 @@ export function OpForm({
       {/* Sticky, because the run button and the command line are the two things
           a reader needs and they used to sit below the fold on a short window. */}
       <div className="form-footer">
-        <div className="cli-echo" title="The same thing, on the command line">
-          <b>$</b> {cliEcho}
-        </div>
-
-        <div className="actions">
-          <button className="run" onClick={onRun} disabled={running || !canRun || planned}>
-            {planned ? "Not ported yet" : running ? "Running…" : destructive ? "Preview" : "Run"}
-          </button>
-          {destructive && !planned && (
-            <span className="danger-note" data-level={op.danger.toUpperCase()}>
-              {op.danger === "irreversible" ? "▲" : "•"} {DANGER_LABEL[op.danger]}
-              {op.danger === "irreversible" ? " — previews first, deletes only on confirm" : ""}
+        {destructive && !planned && (
+          <div className="danger-note" data-level={op.danger.toUpperCase()}>
+            <span>{op.danger === "irreversible" ? "▲" : "•"}</span>
+            <span>
+              {DANGER_LABEL[op.danger]}
+              {op.danger === "irreversible"
+                ? " — previews first, deletes only on confirm"
+                : ""}
             </span>
-          )}
+          </div>
+        )}
+
+        <div className="form-footer-row">
+          <div className="cli-echo" title="The same thing, on the command line">
+            <b>$</b> {cliEcho}
+          </div>
+
+          <div className="actions">
+            <button className="run" onClick={onRun} disabled={running || !canRun || planned}>
+              {planned ? "Not ported yet" : running ? "Running…" : destructive ? "Preview" : "Run"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
