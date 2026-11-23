@@ -645,8 +645,8 @@ mod tests {
         let dir = scratch("flags");
         let file = dir.join("a.exe");
         let mut pe = minimal_pe();
-        // DEP | ASLR | HIGH_ENTROPY_VA | CFG
-        pe[0x98 + 70..0x98 + 72].copy_from_slice(&0x4140u16.to_le_bytes());
+        // DEP (0x0100) | ASLR (0x0040) | HIGH_ENTROPY_VA (0x0020) | CFG (0x4000)
+        pe[0x98 + 70..0x98 + 72].copy_from_slice(&0x4160u16.to_le_bytes());
         fs::write(&file, &pe).unwrap();
 
         let flags = security_flags(&file).unwrap();
