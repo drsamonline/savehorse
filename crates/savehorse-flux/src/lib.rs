@@ -332,11 +332,13 @@ pub fn apply_gain(source: &Path, destination: &Path, multiplier: f64) -> Result<
     read_wav_header(&data)?;
 
     let mut out = data.clone();
-    let data_start = find_data_offset(&data)
+    let (data_start, data_len) = find_data_chunk(&data)
         .ok_or_else(|| Error::Invalid("no data chunk to scale".to_string()))?;
 
-    // Only whole 16-bit samples are touched; a trailing odd byte is left alone.
-    let available = out.len().saturating_sub(data_start) / 2 * 2;
+    // Bound the work by the data chunk's own length, not by the end of the
+    // file: a WAV with an ID3v1 tag appended has 128 bytes after the audio,
+    // and scaling those as samples would corrupt the tag.
+    let available = data_len.min(out.len().saturating_sub(data_start)) / 2 * 2;
     let mut processed = 0usize;
     let mut clipped = 0usize;
 
@@ -376,13 +378,14 @@ pub fn apply_gain(source: &Path, destination: &Path, multiplier: f64) -> Result<
     })
 }
 
-fn find_data_offset(data: &[u8]) -> Option<usize> {
+/// The data chunk's offset and its declared length.
+fn find_data_chunk(data: &[u8]) -> Option<(usize, usize)> {
     let mut offset = 12usize;
     while offset + 8 <= data.len() {
         let id = &data[offset..offset + 4];
         let size = read_u32(data, offset + 4) as usize;
         if id == b"data" {
-            return Some(offset + 8);
+            return Some((offset + 8, size));
         }
         offset = offset + 8 + size + (size % 2);
     }
@@ -486,6 +489,25 @@ mod tests {
 
         let hot = apply_gain(&path, &dir.join("hot.wav"), 10.0).unwrap();
         assert!(hot.samples_clipped > 0, "a 10x gain must clip");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn gain_leaves_an_appended_tag_alone() {
+        let dir = scratch("gain-tag");
+        let path = tone(&dir, "tone.wav");
+        write_tag(&path, "Keep Me", "savehorse", "Album", "2026").unwrap();
+
+        let out = dir.join("gained.wav");
+        let report = apply_gain(&path, &out, 1.2).unwrap();
+
+        // 400 samples of audio, not 400 plus the 128 tag bytes.
+        assert_eq!(report.samples_processed, 400);
+
+        let before = inspect(&path).unwrap();
+        let after = inspect(&out).unwrap();
+        assert_eq!(after.title.as_deref(), Some("Keep Me"), "the tag survives the gain");
+        assert_eq!(before.title, after.title);
         let _ = fs::remove_dir_all(&dir);
     }
 

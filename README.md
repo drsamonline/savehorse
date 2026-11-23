@@ -58,7 +58,7 @@ A migration in progress, not a finished product.
 | Modules | 13 |
 | Operations declared | 87 |
 | Operations ported and tested | **73** |
-| Tests, on Windows, macOS and Linux | 159 |
+| Tests, on Windows, macOS and Linux | 152 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
