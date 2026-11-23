@@ -61,7 +61,7 @@ needing window APIs). Eleven of the thirteen modules are complete.
 | Modules | 13 |
 | Operations declared | 87 |
 | Operations ported and tested | **77** |
-| Tests, on Windows, macOS and Linux | 163 |
+| Tests, on Windows, macOS and Linux | 160 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
