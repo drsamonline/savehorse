@@ -13,19 +13,10 @@ use savehorse_core::{Error, Result};
 use savehorse_registry as registry;
 use savehorse_runner::{execute, Request};
 
-/// Switches that never take a value. Everything else is `--key value`.
-const BOOL_FLAGS: &[&str] = &[
-    "json",
-    "dry-run",
-    "commit",
-    "backup",
-    "regex",
-    "ignore-case",
-    "ascii",
-    "unicode",
-    "help",
-    "version",
-];
+/// Switches that belong to the command line rather than to any one operation.
+/// Everything else that is boolean is read from the manifest, so adding a
+/// switch to an operation does not mean remembering to edit this file.
+const GLOBAL_SWITCHES: &[&str] = &["json", "dry-run", "help", "version"];
 
 fn main() -> ExitCode {
     match run() {
@@ -86,7 +77,13 @@ fn run() -> Result<ExitCode> {
         return Ok(ExitCode::SUCCESS);
     }
 
-    let (positional, flags) = parse_arguments(&args[2..])?;
+    // Ask the manifest which of this operation's parameters are switches,
+    // instead of keeping a second list here that can drift from it.
+    let declared: &[registry::Param] = registry::op(&module_name, &args[1])
+        .map(|op| op.params)
+        .unwrap_or(&[]);
+
+    let (positional, flags) = parse_arguments(&args[2..], declared)?;
     let want_json = flags.contains_key("json");
 
     let request = Request {
@@ -109,7 +106,17 @@ fn run() -> Result<ExitCode> {
 }
 
 /// Split the tail of the command line into positionals and flags.
-fn parse_arguments(args: &[String]) -> Result<(Vec<String>, BTreeMap<String, String>)> {
+fn parse_arguments(
+    args: &[String],
+    declared: &[registry::Param],
+) -> Result<(Vec<String>, BTreeMap<String, String>)> {
+    let mut switches: Vec<&str> = GLOBAL_SWITCHES.to_vec();
+    for param in declared {
+        if param.kind == registry::ParamKind::Bool {
+            switches.push(param.name);
+        }
+    }
+
     let mut positional = Vec::new();
     let mut flags = BTreeMap::new();
     let mut i = 0usize;
@@ -123,7 +130,7 @@ fn parse_arguments(args: &[String]) -> Result<(Vec<String>, BTreeMap<String, Str
                 continue;
             }
 
-            if BOOL_FLAGS.contains(&body) {
+            if switches.contains(&body) {
                 flags.insert(body.to_string(), "true".to_string());
                 i += 1;
                 continue;
