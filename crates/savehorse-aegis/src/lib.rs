@@ -828,9 +828,16 @@ mod tests {
         let entries_dir = dir.join("autostart");
         fs::create_dir_all(&entries_dir).unwrap();
 
+        // Point the entry at a file that certainly exists, rather than at a
+        // Unix path that would make this test platform-specific.
+        let real_target = dir.join("target.bin");
+        fs::write(&real_target, b"x").unwrap();
         fs::write(
             entries_dir.join("app.desktop"),
-            b"[Desktop Entry]\nType=Application\nName=Test\nExec=/usr/bin/env sh\n",
+            format!(
+                "[Desktop Entry]\nType=Application\nName=Test\nExec={} --flag\n",
+                real_target.display()
+            ),
         )
         .unwrap();
         fs::write(
@@ -843,8 +850,12 @@ mod tests {
         assert_eq!(found.len(), 2);
 
         let desktop = found.iter().find(|e| e.name == "app.desktop").unwrap();
-        assert_eq!(desktop.target.as_deref(), Some("/usr/bin/env"));
-        assert!(desktop.target_exists, "/usr/bin/env exists");
+        assert_eq!(
+            desktop.target.as_deref(),
+            Some(real_target.to_string_lossy().as_ref()),
+            "arguments are stripped, leaving the program"
+        );
+        assert!(desktop.target_exists, "the target file is on disk");
 
         let plist = found.iter().find(|e| e.name == "agent.plist").unwrap();
         assert_eq!(plist.target.as_deref(), Some("/bin/sh"));
