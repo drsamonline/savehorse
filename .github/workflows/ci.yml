@@ -158,7 +158,8 @@ jobs:
           # imports is a string heuristic, not an import-table walk, so a file
           # holding DLL names is enough to exercise it.
           printf 'KERNEL32.dll\000USER32.dll\000readme.txt\000' > smoke/dlls.bin
-          cargo run --quiet -- forge imports smoke/dlls.bin | grep -q KERNEL32.dll
+          # names come back lowercased
+          cargo run --quiet -- forge imports smoke/dlls.bin | grep -qi "kernel32.dll"
           cargo run --quiet -- forge hexdump smoke/px.png --length 32
           cargo run --quiet -- forge search smoke/px.png --hex "89504E47"
           cargo run --quiet -- forge patch smoke/px.png --offset 0 --hex "89504E47" --dry-run
