@@ -305,8 +305,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 87 |
-| Operations ready | 73 |
-| Operations planned | 14 |
+| Operations ready | 77 |
+| Operations planned | 10 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

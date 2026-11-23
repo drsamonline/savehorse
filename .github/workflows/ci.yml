@@ -215,10 +215,17 @@ jobs:
           # aegis autostart audit (reads, never changes)
           cargo run --quiet -- aegis persistence
 
+          # pulse — system readouts (all read-only)
+          cargo run --quiet -- pulse hardware
+          cargo run --quiet -- pulse procs --top 5
+          cargo run --quiet -- pulse drives
+          cargo run --quiet -- pulse services
+
           # a planned operation must refuse, and say why.
-          # pulse.services still needs a platform API, so it is the one that
-          # refuses. (aegis shred held this role until it was ported.)
-          if cargo run --quiet -- pulse services 2>err.txt; then
+          # pulse.priority still needs a privileged platform call, so it is the
+          # one that refuses. (aegis shred and pulse.services held this role
+          # before they were ported.)
+          if cargo run --quiet -- pulse priority 2>err.txt; then
             echo "planned operation should have failed"
             exit 1
           fi

@@ -993,6 +993,7 @@ const P_PATH_ONE: &[Param] = &[P_PATH];
 const HALO_IMAGE_ONE: &[Param] = &[P_IMAGE];
 const ARC_ONE: &[Param] = &[P_ARCHIVE];
 const P_JOURNAL_REQ_ONE: &[Param] = &[P_JOURNAL_REQ];
+const P_TOP_ONE: &[Param] = &[P_TOP];
 
 
 // ---------------------------------------------------------------------------
@@ -1207,12 +1208,12 @@ pub static OPS: &[Op] = &[
     Op { id: "morph.undo", module: "morph", name: "undo", summary: "Roll back the last rename transaction", danger: Danger::Destructive, status: Status::Implemented, params: P_JOURNAL_REQ_ONE },
 
     // -- pulse -------------------------------------------------------------
-    Op { id: "pulse.hardware", module: "pulse", name: "hardware", summary: "CPU, memory and architecture",         danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pulse.procs",    module: "pulse", name: "procs",    summary: "Running processes, threads, priority", danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pulse.drives",   module: "pulse", name: "drives",   summary: "Drives, filesystems, free space",      danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "pulse.hardware", module: "pulse", name: "hardware", summary: "CPU, memory and architecture", danger: Danger::Safe, status: Status::Implemented, params: &[] },
+    Op { id: "pulse.procs", module: "pulse", name: "procs", summary: "Running processes, threads, priority", danger: Danger::Safe, status: Status::Implemented, params: P_TOP_ONE },
+    Op { id: "pulse.drives", module: "pulse", name: "drives", summary: "Drives, filesystems, free space", danger: Danger::Safe, status: Status::Implemented, params: &[] },
     Op { id: "pulse.hash", module: "pulse", name: "hash", summary: "CRC32 and SHA-256 of a file", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "pulse.temp", module: "pulse", name: "temp", summary: "Audit reclaimable temporary storage", danger: Danger::Safe, status: Status::Implemented, params: PULSE_TEMP },
-    Op { id: "pulse.services", module: "pulse", name: "services", summary: "Audit background services",            danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "pulse.services", module: "pulse", name: "services", summary: "Audit background services", danger: Danger::Safe, status: Status::Implemented, params: &[] },
     Op { id: "pulse.priority", module: "pulse", name: "priority", summary: "Change a process priority class",      danger: Danger::Destructive, status: Status::Planned, params: &[] },
 
     // -- pager -------------------------------------------------------------
@@ -1284,7 +1285,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 87, "88 declared, minus glyph.search which sift.search supersedes");
-        assert_eq!(implemented, 73, "everything except the system and window operations");
+        assert_eq!(implemented, 77, "everything except the window operations and process priority");
     }
 
     #[test]
@@ -1330,7 +1331,7 @@ mod tests {
         for o in OPS.iter().filter(|o| o.status == Status::Implemented) {
             // aegis.persistence takes no arguments: it audits a fixed set of
             // platform locations. Every other operation must declare something.
-            if o.id != "aegis.persistence" {
+            if !matches!(o.id, "aegis.persistence" | "pulse.hardware" | "pulse.drives" | "pulse.services") {
                 assert!(!o.params.is_empty(), "{} is implemented but declares no parameters", o.id);
             }
             // Not every operation takes a positional argument: `arc chunk`

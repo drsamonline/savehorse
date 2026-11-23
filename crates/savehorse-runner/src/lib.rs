@@ -212,6 +212,10 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "aegis.harden" => aegis_harden(req),
         "pulse.hash" => pulse_hash(req),
         "pulse.temp" => pulse_temp(req),
+        "pulse.hardware" => pulse_hardware(req),
+        "pulse.procs" => pulse_procs(req),
+        "pulse.drives" => pulse_drives(req),
+        "pulse.services" => pulse_services(req),
         "halo.cue" => halo_cue(req),
         "halo.cover" => halo_cover(req),
         "iris.ico" => iris_ico(req),
@@ -1825,6 +1829,97 @@ fn flux_gain(req: &Request) -> Result<Outcome> {
         ),
         to_json(&r)?,
     ))
+}
+
+
+fn pulse_hardware(_req: &Request) -> Result<Outcome> {
+    let h = savehorse_pulse::hardware()?;
+
+    let text = format!(
+        "host       {}\nos         {} {}\nkernel     {}\narch       {}\ncpu        {} ({} logical, {} physical @ {} MHz)\nmemory     {} of {} used\nswap       {} of {} used\n",
+        h.hostname.clone().unwrap_or_else(|| "unknown".to_string()),
+        h.os_name.clone().unwrap_or_default(),
+        h.os_version.clone().unwrap_or_default(),
+        h.kernel.clone().unwrap_or_default(),
+        h.arch,
+        h.cpu_brand,
+        h.cpu_cores_logical,
+        h.cpu_cores_physical.map(|n| n.to_string()).unwrap_or_else(|| "?".to_string()),
+        h.cpu_frequency_mhz,
+        savehorse_core::format_bytes(h.used_memory_bytes),
+        savehorse_core::format_bytes(h.total_memory_bytes),
+        savehorse_core::format_bytes(h.used_swap_bytes),
+        savehorse_core::format_bytes(h.total_swap_bytes)
+    );
+
+    Ok(Outcome::new(text, to_json(&h)?))
+}
+
+fn pulse_procs(req: &Request) -> Result<Outcome> {
+    let top = req.number("top")?.unwrap_or(10);
+    let r = savehorse_pulse::processes(top)?;
+
+    let mut text = format!(
+        "{} process(es), top {} by {}\n\n{:>7}  {:<28} {:>10} {:>7}\n",
+        r.total_processes, r.shown, r.sorted_by, "PID", "NAME", "MEMORY", "CPU%"
+    );
+    for row in &r.rows {
+        text.push_str(&format!(
+            "{:>7}  {:<28} {:>10} {:>6.1}%\n",
+            row.pid,
+            row.name.chars().take(28).collect::<String>(),
+            row.memory_human,
+            row.cpu_percent
+        ));
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn pulse_drives(_req: &Request) -> Result<Outcome> {
+    let drives = savehorse_pulse::drives()?;
+
+    let mut text = format!(
+        "{:<24} {:<10} {:>10} {:>10} {:>6}\n{}\n",
+        "MOUNT", "FS", "SIZE", "FREE", "USED", "-".repeat(64)
+    );
+    for d in &drives {
+        text.push_str(&format!(
+            "{:<24} {:<10} {:>10} {:>10} {:>5}%{}{}\n",
+            d.mount_point.chars().take(24).collect::<String>(),
+            d.file_system,
+            savehorse_core::format_bytes(d.total_bytes),
+            savehorse_core::format_bytes(d.available_bytes),
+            d.used_percent,
+            if d.removable { "  removable" } else { "" },
+            if d.read_only { "  read-only" } else { "" }
+        ));
+    }
+
+    Ok(Outcome::new(text, to_json(&drives)?))
+}
+
+fn pulse_services(_req: &Request) -> Result<Outcome> {
+    let r = savehorse_pulse::services()?;
+
+    let mut text = format!(
+        "platform   {}\nsource     {}\nservices   {}\n\n",
+        r.platform, r.source, r.total
+    );
+    for service in r.services.iter().take(40) {
+        text.push_str(&format!(
+            "  {:<40} {:<20} {}\n",
+            service.name.chars().take(40).collect::<String>(),
+            service.state,
+            service.detail.chars().take(40).collect::<String>()
+        ));
+    }
+    if r.total > 40 {
+        text.push_str(&format!("  ... and {} more\n", r.total - 40));
+    }
+    text.push_str("\nread-only: nothing was started, stopped or enabled\n");
+
+    Ok(Outcome::new(text, to_json(&r)?))
 }
 
 // ---------------------------------------------------------------------------

@@ -10,8 +10,8 @@
 [![Desktop](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml/badge.svg)](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml)
 ![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platforms-windows%20%7C%20macos%20%7C%20linux-4b5563)
-![Operations](https://img.shields.io/badge/operations-73%20of%2087-d8ff4f)
-![Tests](https://img.shields.io/badge/tests-153%20passing-4fd48a)
+![Operations](https://img.shields.io/badge/operations-77%20of%2087-d8ff4f)
+![Tests](https://img.shields.io/badge/tests-163%20passing-4fd48a)
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20NC%201.0.0-ffb340)](LICENSE)
 
 [**User guide**](USER_GUIDE.md) ·
@@ -52,16 +52,16 @@ examples, and a reference for every operation.
 
 ## Where it is
 
-73 of 87 operations are ported and tested. The fourteen that are not are all in
-`pulse` (five, needing a cross-platform system API) and `pager` (nine, needing
-window APIs). Ten of the thirteen modules are complete.
+77 of 87 operations are ported and tested. The ten that are not are
+`pulse priority` (one, needing a privileged platform call) and `pager` (nine,
+needing window APIs). Eleven of the thirteen modules are complete.
 
 | | |
 |---|---|
 | Modules | 13 |
 | Operations declared | 87 |
-| Operations ported and tested | **73** |
-| Tests, on Windows, macOS and Linux | 153 |
+| Operations ported and tested | **77** |
+| Tests, on Windows, macOS and Linux | 163 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
@@ -120,7 +120,7 @@ to; the user guide lists which, and what each preview shows.
 | `glyph` | PDF, Markdown and readability | glyph | 6 / 6 |
 | `scout` | Catalogue, deduplicate and compare | scout + strata | 6 / 6 |
 | `morph` | Batch rename with preview and undo | morph + strata | 2 / 2 |
-| `pulse` | Hardware, processes and maintenance | pulse + beacon | 2 / 7 |
+| `pulse` | Hardware, processes and maintenance | pulse + beacon | 6 / 7 |
 | `pager` | Snap, pin and arrange windows | pager + dock | 0 / 9 |
 | `revive` | Carve, recover and verify snapshots | revive + chronos | 7 / 7 |
 | `flux` | Inspect, tag and shape audio | flux | 4 / 4 |

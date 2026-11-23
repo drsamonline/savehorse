@@ -306,13 +306,18 @@ savehorse morph undo undo.json
 
 ### pulse — system
 
-`hash`, `temp`
+`hash`, `temp`, `hardware`, `procs`, `drives`, `services`
 
-CRC-32 and SHA-256 of a file, and an audit of how much the temporary directory
-is holding. Neither changes anything.
+CRC-32 and SHA-256 of a file, an audit of temporary storage, the machine's
+processor and memory, the busiest processes, mounted volumes and their free
+space, and the services the platform knows about.
 
-Five operations in this module are not ported yet: hardware, processes, drives,
-services and priority. They need a cross-platform system API.
+Everything here is read-only. `services` asks systemd, launchd or `sc` what is
+installed and reports the command it used, so you can check the numbers
+yourself. Nothing is started, stopped or enabled.
+
+`priority` is not ported. Changing a process's priority needs a privileged call
+on every operating system.
 
 ### revive — recovery
 
@@ -399,9 +404,8 @@ default to preview when you ask for one.
 
 ## What is not finished
 
-73 of 87 operations are ported and tested. The fourteen that are not are all in
-`pulse` (five, needing a system API) and `pager` (nine, needing window APIs).
-Everything else runs.
+77 of 87 operations are ported and tested. The ten that are not are
+`pulse priority` (one) and `pager` (nine). Everything else runs.
 
 `savehorse ops` is the authoritative list, and it is generated from the same
 manifest the program runs from, so it cannot drift out of date.

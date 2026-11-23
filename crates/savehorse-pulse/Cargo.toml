@@ -12,3 +12,4 @@ authors.workspace = true
 savehorse-core.workspace = true
 serde.workspace = true
 sha2.workspace = true
+sysinfo = { version = "0.40", default-features = false, features = ["system", "disk"] }
