@@ -187,8 +187,10 @@ jobs:
           cargo run --quiet -- pulse hash smoke/doc.md
           cargo run --quiet -- pulse temp smoke --top 3
 
-          # a planned operation must refuse, and say why
-          if cargo run --quiet -- aegis shred smoke/text.txt 2>err.txt; then
+          # a planned operation must refuse, and say why.
+          # pulse.services still needs a platform API, so it is the one that
+          # refuses. (aegis shred held this role until it was ported.)
+          if cargo run --quiet -- pulse services 2>err.txt; then
             echo "planned operation should have failed"
             exit 1
           fi
