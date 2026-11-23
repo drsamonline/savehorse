@@ -608,15 +608,6 @@ const P_GAIN: Param = Param {
     options: &[],
 };
 
-const P_TITLE: Param = Param {
-    name: "title",
-    kind: ParamKind::Text,
-    positional: false,
-    required: false,
-    help: "Track title, up to 30 characters",
-    options: &[],
-};
-
 const P_ARTIST: Param = Param {
     name: "artist",
     kind: ParamKind::Text,
