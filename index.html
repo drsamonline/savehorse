@@ -170,6 +170,73 @@
   }
   .meta-line b { color: var(--signal); font-weight: 600; }
 
+
+  /* ---------- module glyphs ---------- */
+  .ico {
+    fill: none; stroke: currentColor; stroke-width: 1.6;
+    stroke-linecap: round; stroke-linejoin: round;
+    display: block; flex: none;
+  }
+
+  /* ---------- the rail: the app's own module strip ---------- */
+  .rail-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 30px 0 0;
+    padding: 10px; border: 1px solid var(--rule); background: var(--surface);
+  }
+  .rail-strip a {
+    width: 44px; height: 44px; display: grid; place-items: center;
+    border-radius: 4px; color: var(--ink-low); text-decoration: none;
+    transition: background .15s, color .15s, transform .15s;
+  }
+  .rail-strip a:hover { background: var(--surface-2); transform: translateY(-2px); }
+  .rail-strip a svg { width: 21px; height: 21px; }
+  .rail-strip .spacer { flex: 1; }
+  .rail-strip .rail-label {
+    display: flex; align-items: center; padding: 0 12px;
+    font: 500 10.5px/1 var(--mono); letter-spacing: .17em;
+    text-transform: uppercase; color: var(--ink-ghost);
+  }
+
+  /* ---------- the tool wall ---------- */
+  .wall {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+    gap: 12px; margin-top: 8px;
+  }
+  .tool {
+    position: relative; display: block; text-decoration: none;
+    border: 1px solid var(--rule); background: var(--surface);
+    padding: 20px 18px 16px; border-radius: 3px;
+    transition: border-color .16s, background .16s, transform .16s;
+    overflow: hidden;
+  }
+  .tool::after {
+    /* a hairline of the module colour along the top edge */
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+    background: var(--tint); opacity: .55; transition: opacity .16s;
+  }
+  .tool:hover { border-color: var(--rule); background: var(--surface-2); transform: translateY(-2px); }
+  .tool:hover::after { opacity: 1; }
+  .tool:hover .tool-ico { opacity: 1; transform: scale(1.08); }
+  .tool-head { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+  .tool-ico {
+    width: 30px; height: 30px; color: var(--tint); opacity: .72;
+    transition: opacity .16s, transform .16s;
+  }
+  .tool-name { font: 600 14px/1 var(--mono); letter-spacing: .02em; }
+  .tool-job { font-size: 13.5px; color: var(--ink-mid); line-height: 1.45; min-height: 39px; }
+  .tool-foot {
+    display: flex; align-items: center; gap: 10px; margin-top: 14px;
+    font: 500 10.5px/1 var(--mono); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-ghost);
+  }
+  .tool-foot .bar { flex: 1; height: 2px; background: var(--rule); position: relative; }
+  .tool-foot .bar span { position: absolute; inset: 0 auto 0 0; background: var(--tint); }
+  .tool-foot .n { color: var(--ink-low); white-space: nowrap; }
+  .tool.done .tool-foot .n { color: var(--tint); }
+
+  /* ---------- section mark ---------- */
+  .eyebrow .glyph { width: 15px; height: 15px; color: var(--copper); margin-right: -4px; }
+
   /* ---------- the plate: a mounted figure ---------- */
   .plate { margin: 56px 0 0; position: relative; }
   .plate .frame {
@@ -283,6 +350,28 @@
   .data td.val span { color: var(--ink-ghost); font-weight: 400; }
   .data tr:last-child td { border-bottom: none; }
 
+
+  /* ---------- the readout ring ---------- */
+  .readout { display: grid; grid-template-columns: 200px 1fr; gap: 44px; align-items: center; }
+  .ring { position: relative; width: 200px; height: 200px; }
+  .ring svg { transform: rotate(-90deg); display: block; }
+  .ring .track { stroke: var(--rule); }
+  .ring .value { stroke: var(--signal); stroke-linecap: round; }
+  .ring .centre {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    text-align: center; line-height: 1;
+  }
+  .ring .big {
+    font: 600 40px/1 var(--display); letter-spacing: -.03em; color: var(--ink);
+  }
+  .ring .of {
+    font: 500 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-ghost); margin-top: 8px;
+  }
+  @media (max-width: 760px) {
+    .readout { grid-template-columns: 1fr; gap: 28px; justify-items: start; }
+  }
+
   /* ---------- support ---------- */
   .support { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--rule); }
   .support .cell {
@@ -360,8 +449,66 @@
 <aside class="spine" aria-hidden="true">
   <div class="mark">S</div>
   <div class="ticks"></div>
-  <div class="vertical">savehorse · v0.1 · 73 / 87</div>
+  <div class="vertical">savehorse · v0.1.0 · 86 / 87</div>
 </aside>
+
+
+<!-- The thirteen module glyphs, drawn once and referenced by <use>. Same
+     strokes as the desktop app, so the page and the software share a hand. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-aegis" viewBox="0 0 24 24">
+      <path d="M12 3 19 6v6c0 4.2-2.9 7.3-7 9-4.1-1.7-7-4.8-7-9V6l7-3Z"/><path d="m9 12 2 2 4-4"/>
+    </symbol>
+    <symbol id="i-forge" viewBox="0 0 24 24">
+      <path d="M3 9h9l3-3h6v3h-3l-2 3H8"/><path d="M7 15h10M8 15v5M16 15v5"/>
+    </symbol>
+    <symbol id="i-halo" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5v3M12 17.5v3"/>
+    </symbol>
+    <symbol id="i-iris" viewBox="0 0 24 24">
+      <rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/>
+      <path d="m4 17 5-4 4 3 3-2 4 3"/>
+    </symbol>
+    <symbol id="i-arc" viewBox="0 0 24 24">
+      <path d="M12 3.5 20 8v8l-8 4.5L4 16V8l8-4.5Z"/><path d="M4 8l8 4.5L20 8M12 12.5V21"/>
+    </symbol>
+    <symbol id="i-sift" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>
+    </symbol>
+    <symbol id="i-glyph" viewBox="0 0 24 24">
+      <path d="M6 3.5h8l4 4v13H6v-17Z"/><path d="M14 3.5v4h4M9 12h6M9 16h4"/>
+    </symbol>
+    <symbol id="i-scout" viewBox="0 0 24 24">
+      <path d="M3.5 6.5h6l1.5 2h9v11h-16v-13Z"/><path d="M7 12h10M7 15.5h6"/>
+    </symbol>
+    <symbol id="i-morph" viewBox="0 0 24 24">
+      <path d="M12.5 3.5H20v7.5l-9 9-7.5-7.5 9-9Z"/><circle cx="16.5" cy="7.5" r="1.4"/>
+    </symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24">
+      <path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-5"/><circle cx="12" cy="17" r="1.3"/>
+    </symbol>
+    <symbol id="i-pager" viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/>
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>
+    </symbol>
+    <symbol id="i-revive" viewBox="0 0 24 24">
+      <path d="M12 6.5a6.5 6.5 0 1 1-6.4 7.8"/><path d="M5.5 6.5v4h4"/>
+    </symbol>
+    <symbol id="i-flux" viewBox="0 0 24 24">
+      <path d="M3 12h2.5l2-5 3 10 3-13 3 11 2-3H21"/>
+    </symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24">
+      <path d="m12 3.5 8 4.5-8 4.5-8-4.5 8-4.5Z"/><path d="m4 12.5 8 4.5 8-4.5"/>
+    </symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24">
+      <rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="m7 10 2.5 2L7 14M12.5 14H17"/>
+    </symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24">
+      <path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4-5"/><circle cx="12" cy="17" r="1.3"/>
+    </symbol>
+  </defs>
+</svg>
 
 <div class="page">
 
@@ -407,6 +554,23 @@
       &nbsp;·&nbsp; <b>12</b> of 13 modules complete
     </p>
 
+    <div class="rail-strip" aria-label="The thirteen modules">
+      <span class="rail-label">Modules</span>
+      <a href="#modules" style="color:#ffb340" title="aegis"><svg class="ico"><use href="#i-aegis"/></svg></a>
+      <a href="#modules" style="color:#ff7a5c" title="forge"><svg class="ico"><use href="#i-forge"/></svg></a>
+      <a href="#modules" style="color:#b98bff" title="halo"><svg class="ico"><use href="#i-halo"/></svg></a>
+      <a href="#modules" style="color:#ff6fa5" title="iris"><svg class="ico"><use href="#i-iris"/></svg></a>
+      <a href="#modules" style="color:#5ac8fa" title="arc"><svg class="ico"><use href="#i-arc"/></svg></a>
+      <a href="#modules" style="color:#d8ff4f" title="sift"><svg class="ico"><use href="#i-sift"/></svg></a>
+      <a href="#modules" style="color:#9ee6b4" title="glyph"><svg class="ico"><use href="#i-glyph"/></svg></a>
+      <a href="#modules" style="color:#6fd6c4" title="scout"><svg class="ico"><use href="#i-scout"/></svg></a>
+      <a href="#modules" style="color:#c9a7ff" title="morph"><svg class="ico"><use href="#i-morph"/></svg></a>
+      <a href="#modules" style="color:#ffd166" title="pulse"><svg class="ico"><use href="#i-pulse"/></svg></a>
+      <a href="#modules" style="color:#7aa7ff" title="pager"><svg class="ico"><use href="#i-pager"/></svg></a>
+      <a href="#modules" style="color:#7de08a" title="revive"><svg class="ico"><use href="#i-revive"/></svg></a>
+      <a href="#modules" style="color:#ff9f68" title="flux"><svg class="ico"><use href="#i-flux"/></svg></a>
+    </div>
+
     <figure class="plate reveal">
       <div class="frame">
         <span class="crop"></span>
@@ -447,7 +611,7 @@
 
   <section id="principles">
     <div class="wrap">
-      <p class="eyebrow"><span class="n">01</span><span>Method</span></p>
+      <p class="eyebrow"><svg class="ico glyph"><use href="#i-layers"/></svg><span class="n">01</span><span>Method</span></p>
       <h2>Three rules, held to</h2>
       <p class="sub">
         The portfolio was never short of features. It was short of one place to
@@ -490,105 +654,165 @@
 
   <section id="modules">
     <div class="wrap">
-      <p class="eyebrow"><span class="n">02</span><span>Schedule</span></p>
+      <p class="eyebrow"><span class="n">02</span><span>The bench</span></p>
       <h2>Thirteen modules</h2>
       <p class="sub">
         Grouped by the job, not by how the code was written. Each keeps the name
-        it had on its own; the two sources in the fourth column are the
-        applications it replaces.
+        and the mark it had on its own, and the bar is how much of it has been
+        ported. Hover a tile to see it in colour.
       </p>
 
-      <div class="sheet">
-        <div class="sheet-head">
-          <span>№</span><span>Module</span><span>Job</span>
-          <span class="src-h">From</span><span style="text-align:right">Ported</span>
-        </div>
-
-        <div class="row done"><span class="num">01</span>
-          <span class="mod"><i style="background:#ffb340"></i>aegis</span>
-          <span class="job">Encrypt, shred, scan and audit</span>
-          <span class="src">aegis + vault</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">6 / 6</span></span>
-        </div>
-        <div class="row done"><span class="num">02</span>
-          <span class="mod"><i style="background:#ff7a5c"></i>forge</span>
-          <span class="job">Inspect and patch executables</span>
-          <span class="src">forge</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">6 / 6</span></span>
-        </div>
-        <div class="row done"><span class="num">03</span>
-          <span class="mod"><i style="background:#b98bff"></i>halo</span>
-          <span class="job">Author, read and convert disc images</span>
-          <span class="src">halo + optic</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">7 / 7</span></span>
-        </div>
-        <div class="row done"><span class="num">04</span>
-          <span class="mod"><i style="background:#ff6fa5"></i>iris</span>
-          <span class="job">Inspect, convert and transform images</span>
-          <span class="src">iris + prism</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">8 / 8</span></span>
-        </div>
-        <div class="row done"><span class="num">05</span>
-          <span class="mod"><i style="background:#5ac8fa"></i>arc</span>
-          <span class="job">Pack, split, join and transfer</span>
-          <span class="src">arc + vortex</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">10 / 10</span></span>
-        </div>
-        <div class="row done"><span class="num">06</span>
-          <span class="mod"><i style="background:#d8ff4f"></i>sift</span>
-          <span class="job">Find, extract and replace across files</span>
-          <span class="src">sift + slate</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">9 / 9</span></span>
-        </div>
-        <div class="row done"><span class="num">07</span>
-          <span class="mod"><i style="background:#9ee6b4"></i>glyph</span>
-          <span class="job">PDF, Markdown and readability</span>
-          <span class="src">glyph</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">6 / 6</span></span>
-        </div>
-        <div class="row done"><span class="num">08</span>
-          <span class="mod"><i style="background:#6fd6c4"></i>scout</span>
-          <span class="job">Catalogue, deduplicate and compare</span>
-          <span class="src">scout + strata</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">6 / 6</span></span>
-        </div>
-        <div class="row done"><span class="num">09</span>
-          <span class="mod"><i style="background:#c9a7ff"></i>morph</span>
-          <span class="job">Batch rename with preview and undo</span>
-          <span class="src">morph + strata</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">2 / 2</span></span>
-        </div>
-        <div class="row"><span class="num">10</span>
-          <span class="mod"><i style="background:#ffd166"></i>pulse</span>
-          <span class="job">Hardware, processes and maintenance</span>
-          <span class="src">pulse + beacon</span>
-          <span class="prog"><span class="bar"><span style="width:86%"></span></span><span class="n">6 / 7</span></span>
-        </div>
-        <div class="row"><span class="num">11</span>
-          <span class="mod"><i style="background:#7aa7ff"></i>pager</span>
-          <span class="job">Snap, pin and arrange windows</span>
-          <span class="src">pager + dock</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">9 / 9</span></span>
-        </div>
-        <div class="row done"><span class="num">12</span>
-          <span class="mod"><i style="background:#7de08a"></i>revive</span>
-          <span class="job">Carve, recover and verify snapshots</span>
-          <span class="src">revive + chronos</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">7 / 7</span></span>
-        </div>
-        <div class="row done"><span class="num">13</span>
-          <span class="mod"><i style="background:#ff9f68"></i>flux</span>
-          <span class="job">Inspect, tag and shape audio</span>
-          <span class="src">flux</span>
-          <span class="prog"><span class="bar"><span style="width:100%"></span></span><span class="n">4 / 4</span></span>
-        </div>
+      <div class="wall">
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#ffb340">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-aegis"/></svg>
+            <span class="tool-name">aegis</span>
+          </span>
+          <span class="tool-job">Encrypt, shred, scan and audit</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">6 / 6</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#ff7a5c">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-forge"/></svg>
+            <span class="tool-name">forge</span>
+          </span>
+          <span class="tool-job">Inspect and patch executables</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">6 / 6</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#b98bff">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-halo"/></svg>
+            <span class="tool-name">halo</span>
+          </span>
+          <span class="tool-job">Author, read and convert disc images</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">7 / 7</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#ff6fa5">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-iris"/></svg>
+            <span class="tool-name">iris</span>
+          </span>
+          <span class="tool-job">Inspect, convert and transform images</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">8 / 8</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#5ac8fa">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-arc"/></svg>
+            <span class="tool-name">arc</span>
+          </span>
+          <span class="tool-job">Pack, split, join and transfer</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">10 / 10</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#d8ff4f">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-sift"/></svg>
+            <span class="tool-name">sift</span>
+          </span>
+          <span class="tool-job">Find, extract and replace across files</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">9 / 9</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#9ee6b4">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-glyph"/></svg>
+            <span class="tool-name">glyph</span>
+          </span>
+          <span class="tool-job">PDF, Markdown and readability</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">6 / 6</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#6fd6c4">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-scout"/></svg>
+            <span class="tool-name">scout</span>
+          </span>
+          <span class="tool-job">Catalogue, deduplicate and compare</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">6 / 6</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#c9a7ff">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-morph"/></svg>
+            <span class="tool-name">morph</span>
+          </span>
+          <span class="tool-job">Batch rename with preview and undo</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">2 / 2</span>
+          </span>
+        </a>
+        <a class="tool " href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#ffd166">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-pulse"/></svg>
+            <span class="tool-name">pulse</span>
+          </span>
+          <span class="tool-job">Hardware, processes and maintenance</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:86%"></span></span>
+            <span class="n">6 / 7</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#7aa7ff">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-pager"/></svg>
+            <span class="tool-name">pager</span>
+          </span>
+          <span class="tool-job">Snap, pin and arrange windows</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">9 / 9</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#7de08a">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-revive"/></svg>
+            <span class="tool-name">revive</span>
+          </span>
+          <span class="tool-job">Carve, recover and verify snapshots</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">7 / 7</span>
+          </span>
+        </a>
+        <a class="tool done" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md" style="--tint:#ff9f68">
+          <span class="tool-head">
+            <svg class="ico tool-ico"><use href="#i-flux"/></svg>
+            <span class="tool-name">flux</span>
+          </span>
+          <span class="tool-job">Inspect, tag and shape audio</span>
+          <span class="tool-foot">
+            <span class="bar"><span style="width:100%"></span></span>
+            <span class="n">4 / 4</span>
+          </span>
+        </a>
       </div>
     </div>
   </section>
 
   <section id="cli">
     <div class="wrap">
-      <p class="eyebrow"><span class="n">03</span><span>Listing</span></p>
+      <p class="eyebrow"><svg class="ico glyph"><use href="#i-terminal"/></svg><span class="n">03</span><span>Listing</span></p>
       <h2>Every action has a command line</h2>
       <p class="sub">
         The app shows the equivalent command under every form, so what you learn
@@ -630,7 +854,7 @@
 
   <section id="status">
     <div class="wrap">
-      <p class="eyebrow"><span class="n">04</span><span>Readout</span></p>
+      <p class="eyebrow"><svg class="ico glyph"><use href="#i-gauge"/></svg><span class="n">04</span><span>Readout</span></p>
       <h2>Status, honestly</h2>
       <p class="sub">
         A migration in progress, not a finished product. Every number below is
@@ -638,15 +862,32 @@
         stale.
       </p>
 
-      <table class="data">
+      <div class="readout">
+        <div class="ring" aria-hidden="true">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle class="track" cx="100" cy="100" r="86" fill="none" stroke-width="6"/>
+            <!-- 86 of 87 is 98.9% of the circumference: 2 x pi x 86 -->
+            <circle class="value" cx="100" cy="100" r="86" fill="none" stroke-width="6"
+                    stroke-dasharray="534.4" stroke-dashoffset="6.1"/>
+          </svg>
+          <div class="centre">
+            <div>
+              <div class="big">86<span style="font-size:22px;color:var(--ink-ghost)">/87</span></div>
+              <div class="of">operations ported</div>
+            </div>
+          </div>
+        </div>
+
+        <table class="data">
         <tr><th>Measure</th><th style="text-align:right">Now</th></tr>
         <tr><td>Modules</td><td class="val">13</td></tr>
         <tr><td>Operations declared in the manifest</td><td class="val">87</td></tr>
-        <tr><td>Operations ported and tested</td><td class="val">73</td></tr>
-        <tr><td>Tests, on Windows, macOS and Linux</td><td class="val">153</td></tr>
-        <tr><td>Modules fully ported</td><td class="val">10 <span>/ 13</span></td></tr>
+        <tr><td>Operations ported and tested</td><td class="val">86</td></tr>
+        <tr><td>Tests, on Windows, macOS and Linux</td><td class="val">169</td></tr>
+        <tr><td>Modules fully ported</td><td class="val">12 <span>/ 13</span></td></tr>
         <tr><td>Desktop app</td><td class="val" style="font-size:13px">Tauri 2 + React</td></tr>
-      </table>
+        </table>
+      </div>
 
       <p class="sub" style="margin-top:34px">
         One operation is left: <span class="mono">pulse priority</span>, which
