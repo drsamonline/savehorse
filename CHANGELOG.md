@@ -4,15 +4,15 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] — 2026-11-23
 
-Nothing is released yet. This entry records what exists so far.
+First release. Thirteen modules, one command line, one desktop app.
 
 ### Added
 
 - Thirteen module crates, one operation manifest, one shared runner, a CLI and a
   Tauri desktop app.
-- 73 of 87 operations ported and tested across Windows, macOS and Linux.
+- 86 of 87 operations ported and tested across Windows, macOS and Linux.
 - `savehorse ops`, generated from the manifest, which cannot drift from the code.
 - A static interface demo built from the real app, with outputs captured from
   actual test runs.
@@ -36,7 +36,11 @@ Nothing is released yet. This entry records what exists so far.
 
 ### Known gaps
 
-- `pulse` hardware, processes, drives, services and priority: five operations
-  waiting on a cross-platform system API.
-- `pager`: nine operations waiting on per-platform window APIs and a resident
-  process.
+- `pulse priority`: changing a process's priority needs a privileged call on
+  every operating system, and a wrong implementation makes a machine unusable.
+  One operation out of eighty-seven.
+- `pager` on macOS: listing and switching windows work through `osascript`;
+  snapping, moving, pinning and opacity do not. Windows and Linux have the full
+  set.
+- The desktop app has not been run outside CI yet. It compiles and the interface
+  is tested, but the first launch on a real machine is untested.
