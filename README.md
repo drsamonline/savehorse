@@ -61,7 +61,7 @@ system. Twelve of the thirteen modules are complete.
 | Modules | 13 |
 | Operations declared | 87 |
 | Operations ported and tested | **86** |
-| Tests, on Windows, macOS and Linux | 160 |
+| Tests, on Windows, macOS and Linux | 169 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
