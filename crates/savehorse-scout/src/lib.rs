@@ -769,9 +769,10 @@ mod tests {
         fs::write(sub.join("mid.bin"), vec![0u8; 1000]).unwrap();
 
         let report = analyze_treemap(&dir).unwrap();
-        assert_eq!(report.total_size_bytes, 3001);
+        // 3000 + 1 + 1000
+        assert_eq!(report.total_size_bytes, 4001);
         assert_eq!(report.items[0].name, "big.bin");
-        assert!((report.items[0].percentage - 99.97).abs() < 0.1);
+        assert!((report.items[0].percentage - 74.98).abs() < 0.1);
         let sub_item = report.items.iter().find(|i| i.name == "sub").unwrap();
         assert!(sub_item.is_dir);
         assert_eq!(sub_item.size_bytes, 1000);
