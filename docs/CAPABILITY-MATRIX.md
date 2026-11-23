@@ -10,7 +10,7 @@ folded into thirteen modules.
 
 ## Guards
 
-Five checks exist because each one has already caught a real mistake. Every one
+Six checks exist because each one has already caught a real mistake. Every one
 of them has been tested to fire — a guard that has never failed is a guard
 nobody knows works.
 
@@ -21,6 +21,7 @@ nobody knows works.
 | Documented commands | A `savehorse ...` example that the argument parser rejects | `scripts/check_docs.py` |
 | Demo staleness | `demo/` committed without being rebuilt after an app change | `desktop.yml` |
 | Release version | A tag that disagrees with the version in `Cargo.toml` | `release.yml` |
+| Site references | An asset the landing page or the demo points at that no longer exists | `scripts/check_site.py` |
 
 ## How this is verified
 

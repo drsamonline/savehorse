@@ -252,6 +252,11 @@ jobs:
           # manifest the CLI reads. It drifted once; this is the guard.
           python3 scripts/check_docs.py
 
+          # The landing page and the demo are built artefacts. Nothing checked
+          # that the paths inside them still resolve; a renamed asset or a Vite
+          # base change would break the published site with every test green.
+          python3 scripts/check_site.py
+
           # a planned operation must refuse, and say why.
           # Ask the manifest which operation is still planned, rather than
           # naming one here. This check went stale three times as operations
