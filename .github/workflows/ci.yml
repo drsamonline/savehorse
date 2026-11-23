@@ -36,6 +36,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      # The crates were renamed from shavehorse-* to savehorse-* early on.
+      # A stale import reads as a missing crate and wastes a whole CI run,
+      # so it fails here first, with a message that says what to do.
+      - name: No stale crate names
+        shell: bash
+        run: |
+          if grep -rn "shavehorse" --include=*.rs --include=*.toml .; then
+            echo "::error::The crates are savehorse-*, not shavehorse-*. Fix the imports above."
+            exit 1
+          fi
+
       - name: Build
         run: cargo build --workspace --all-targets --verbose
 

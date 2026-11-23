@@ -12,10 +12,10 @@
 //! strand the only copies of whatever is already backed up.
 
 use serde::{Deserialize, Serialize};
-use shavehorse_core::{crc32, to_hex, Error, Result};
+use savehorse_core::{crc32, to_hex, Error, Result};
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 /// The snapshot magic, unchanged from chronos.
