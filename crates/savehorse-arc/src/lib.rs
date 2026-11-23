@@ -91,8 +91,13 @@ fn collect_paths(dir: &Path, base: &Path, out: &mut Vec<(PathBuf, String)>) {
         Ok(e) => e,
         Err(_) => return,
     };
-    for entry in entries.flatten() {
-        let path = entry.path();
+    // Sorted before recursing. The filesystem hands back entries in whatever
+    // order it likes, so the same directory produced different archives on
+    // different runs and two builds of the same input never matched.
+    let mut children: Vec<PathBuf> = entries.flatten().map(|entry| entry.path()).collect();
+    children.sort();
+
+    for path in children {
         let rel = path
             .strip_prefix(base)
             .unwrap_or(&path)
@@ -864,6 +869,30 @@ mod tests {
         let _ = fs::remove_dir_all(&p);
         fs::create_dir_all(&p).unwrap();
         p
+    }
+
+
+    #[test]
+    fn archive_entries_are_in_a_stable_order() {
+        // The same directory must produce the same archive twice, or checksums
+        // are meaningless and two runs of the tool disagree.
+        let dir = std::env::temp_dir().join(format!("savehorse-arc-order-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        for name in ["c.txt", "a.txt", "b.txt"] {
+            fs::write(dir.join(name), b"x").unwrap();
+        }
+
+        let mut first = Vec::new();
+        collect_paths(&dir, &dir, &mut first);
+        let mut second = Vec::new();
+        collect_paths(&dir, &dir, &mut second);
+
+        let names: Vec<&str> = first.iter().map(|(_, n)| n.as_str()).collect();
+        assert_eq!(names, vec!["a.txt", "b.txt", "c.txt"], "entries are sorted");
+        assert_eq!(first, second, "two walks of the same directory agree");
+
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
