@@ -368,7 +368,15 @@ fn scout_catalog(inv: &Invocation) -> Result<ExitCode> {
                 dest
             );
         }
-        None => print!("{}", rendered),
+        None => {
+            // The JSON and CSV renderers do not end with a newline; without
+            // this the next thing printed lands on the same line.
+            if rendered.ends_with('\n') {
+                print!("{}", rendered);
+            } else {
+                println!("{}", rendered);
+            }
+        }
     }
 
     Ok(ExitCode::SUCCESS)
