@@ -1176,7 +1176,7 @@ fn forge_patch(req: &Request) -> Result<Outcome> {
         format!(
             "patched {} byte(s) at 0x{:X} in '{}': {} -> {}{}\n",
             r.bytes_patched, r.offset, r.file, r.original_bytes, r.new_bytes,
-            r.backup_created.map(|b| format!(" (backup {})", b)).unwrap_or_default()
+            r.backup_created.clone().map(|b| format!(" (backup {})", b)).unwrap_or_default()
         )
     } else {
         format!(
