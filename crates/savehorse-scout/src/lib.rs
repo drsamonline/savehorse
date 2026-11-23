@@ -13,6 +13,7 @@
 use serde::{Deserialize, Serialize};
 use savehorse_core::{format_bytes, Error, Result, WalkOptions};
 use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 /// One file in a catalogue.
