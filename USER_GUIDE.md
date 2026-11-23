@@ -151,16 +151,17 @@ Leave off `--commit` and it only tells you what it would remove.
 ### Put a file in a vault
 
 ```sh
-savehorse aegis encrypt notes.txt --out notes.vault --passphrase
+savehorse aegis encrypt notes.txt --out notes.vault --passphrase "..."
 ```
 
-The passphrase is prompted for. If you would rather script it, `--passphrase
-"..."` works, though it will end up in your shell history.
+The passphrase is a value on the command line, so it lands in your shell
+history. For anything that matters, read it from a file you delete afterwards,
+or prefix the command with a space if your shell is configured to ignore those.
 
 To get it back:
 
 ```sh
-savehorse aegis decrypt notes.vault --out notes.txt --passphrase
+savehorse aegis decrypt notes.vault --out notes.txt --passphrase "..."
 ```
 
 A wrong passphrase produces one message and writes nothing. The format cannot

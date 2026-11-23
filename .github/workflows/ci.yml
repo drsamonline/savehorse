@@ -229,6 +229,10 @@ jobs:
           cargo run --quiet -- pager list || true
           cargo run --quiet -- pager launch true
 
+          # Every `savehorse ...` command in the docs must parse against the
+          # manifest the CLI reads. It drifted once; this is the guard.
+          python3 scripts/check_docs.py
+
           # a planned operation must refuse, and say why.
           # Ask the manifest which operation is still planned, rather than
           # naming one here. This check went stale three times as operations

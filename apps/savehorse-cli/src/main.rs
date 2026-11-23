@@ -16,7 +16,10 @@ use savehorse_runner::{execute, Request};
 /// Switches that belong to the command line rather than to any one operation.
 /// Everything else that is boolean is read from the manifest, so adding a
 /// switch to an operation does not mean remembering to edit this file.
-const GLOBAL_SWITCHES: &[&str] = &["json", "dry-run", "help", "version"];
+// `commit` belongs here with `dry-run`: the two are opposites and either
+// applies to any operation that writes. Leaving it out meant `pulse priority
+// --commit`, which the guide documents, was rejected for wanting a value.
+const GLOBAL_SWITCHES: &[&str] = &["json", "dry-run", "commit", "help", "version"];
 
 /// Rust ignores SIGPIPE by default, so writing to a closed pipe returns an
 /// error and `println!` panics on it. That turns `savehorse ops | head` into a

@@ -96,7 +96,7 @@ savehorse <module> <operation> [arguments] [flags]
 savehorse sift search "TODO" ./src --regex
 savehorse sift replace old_name new_name ./src --dry-run
 savehorse scout duplicates ~/Downloads
-savehorse aegis encrypt notes.txt --out notes.vault --passphrase
+savehorse aegis encrypt notes.txt --out notes.vault --passphrase "..."
 savehorse halo create ./disc --out disc.iso --volume-id BACKUP
 savehorse morph rename ./photos --case title --number --journal undo.json
 ```
