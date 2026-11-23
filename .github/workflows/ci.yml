@@ -156,7 +156,7 @@ jobs:
           cargo run --quiet -- morph rename smoke/ren --case upper --dry-run
           test -f smoke/ren/one.txt
           cargo run --quiet -- morph rename smoke/ren --case upper --journal smoke/ren/journal.json
-          test -f smoke/ren/ONE.TXT
+          test -f smoke/ren/ONE.txt
           cargo run --quiet -- morph undo smoke/ren/journal.json
           test -f smoke/ren/one.txt
 

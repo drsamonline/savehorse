@@ -1180,7 +1180,7 @@ fn forge_patch(req: &Request) -> Result<Outcome> {
         )
     } else {
         format!(
-            "would patch {} byte(s) at 0x{:X} in '{}': {} -> {} — add --dry-run off to apply\n",
+            "would patch {} byte(s) at 0x{:X} in '{}': {} -> {}\n(re-run without --dry-run to apply)\n",
             r.bytes_patched, r.offset, r.file, r.original_bytes, r.new_bytes
         )
     };
