@@ -501,6 +501,355 @@ pub fn join_chunks(input: &Path, output: Option<&Path>) -> Result<JoinReport> {
     })
 }
 
+
+// ---------------------------------------------------------------------------
+// Transfer planning, torrents and probes (from vortex)
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct SegmentPlan {
+    pub segment_index: usize,
+    pub start_byte: u64,
+    pub end_byte: u64,
+    pub length_bytes: u64,
+    pub range_header: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct TorrentFileItem {
+    pub path: String,
+    pub length: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct TorrentMetadata {
+    pub announce: Option<String>,
+    pub name: String,
+    pub piece_length: u64,
+    pub piece_count: usize,
+    pub total_bytes: u64,
+    pub files: Vec<TorrentFileItem>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct ProbeResult {
+    pub host: String,
+    pub port: u16,
+    pub connected: bool,
+    pub latency_ms: u64,
+    pub detail: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct UpnpPayloads {
+    pub ssdp_discovery: String,
+    pub soap_add_port_mapping: String,
+}
+
+/// Split a size into byte ranges, ready to be sent as HTTP Range headers.
+pub fn plan_segments(total_size: u64, segments: usize) -> Vec<SegmentPlan> {
+    if segments == 0 || total_size == 0 {
+        return Vec::new();
+    }
+
+    let count = segments as u64;
+    let base = total_size / count;
+    let mut plans = Vec::with_capacity(segments);
+    let mut start = 0u64;
+
+    for index in 0..segments {
+        let is_last = index == segments - 1;
+        let end = if is_last {
+            total_size - 1
+        } else {
+            (start + base - 1).min(total_size - 1)
+        };
+        let length = end - start + 1;
+
+        plans.push(SegmentPlan {
+            segment_index: index,
+            start_byte: start,
+            end_byte: end,
+            length_bytes: length,
+            range_header: format!("bytes={}-{}", start, end),
+        });
+
+        start = end + 1;
+        if start >= total_size {
+            break;
+        }
+    }
+
+    plans
+}
+
+// --- bencode ---------------------------------------------------------------
+
+enum Bencode {
+    Int(i64),
+    Bytes(Vec<u8>),
+    List(Vec<Bencode>),
+    Dict(Vec<(String, Bencode)>),
+}
+
+impl Bencode {
+    fn get(&self, key: &str) -> Option<&Bencode> {
+        match self {
+            Bencode::Dict(entries) => entries.iter().find(|(k, _)| k == key).map(|(_, v)| v),
+            _ => None,
+        }
+    }
+
+    fn as_int(&self) -> Option<i64> {
+        match self {
+            Bencode::Int(v) => Some(*v),
+            _ => None,
+        }
+    }
+
+    fn as_bytes(&self) -> Option<&[u8]> {
+        match self {
+            Bencode::Bytes(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    fn as_text(&self) -> Option<String> {
+        self.as_bytes().map(|b| String::from_utf8_lossy(b).to_string())
+    }
+}
+
+fn parse_bencode(data: &[u8], pos: &mut usize) -> Result<Bencode> {
+    if *pos >= data.len() {
+        return Err(Error::Invalid("bencode: unexpected end of data".to_string()));
+    }
+
+    match data[*pos] {
+        b'i' => {
+            *pos += 1;
+            let start = *pos;
+            while *pos < data.len() && data[*pos] != b'e' {
+                *pos += 1;
+            }
+            let text = std::str::from_utf8(&data[start..*pos])
+                .map_err(|_| Error::Invalid("bencode: bad integer".to_string()))?;
+            let value = text
+                .parse::<i64>()
+                .map_err(|_| Error::Invalid("bencode: bad integer".to_string()))?;
+            *pos += 1;
+            Ok(Bencode::Int(value))
+        }
+        b'l' => {
+            *pos += 1;
+            let mut items = Vec::new();
+            while *pos < data.len() && data[*pos] != b'e' {
+                items.push(parse_bencode(data, pos)?);
+            }
+            *pos += 1;
+            Ok(Bencode::List(items))
+        }
+        b'd' => {
+            *pos += 1;
+            let mut entries = Vec::new();
+            while *pos < data.len() && data[*pos] != b'e' {
+                let key = match parse_bencode(data, pos)? {
+                    Bencode::Bytes(b) => String::from_utf8_lossy(&b).to_string(),
+                    _ => return Err(Error::Invalid("bencode: key is not a string".to_string())),
+                };
+                let value = parse_bencode(data, pos)?;
+                entries.push((key, value));
+            }
+            *pos += 1;
+            Ok(Bencode::Dict(entries))
+        }
+        b'0'..=b'9' => {
+            let start = *pos;
+            while *pos < data.len() && data[*pos] != b':' {
+                *pos += 1;
+            }
+            let length_text = std::str::from_utf8(&data[start..*pos])
+                .map_err(|_| Error::Invalid("bencode: bad length".to_string()))?;
+            let length = length_text
+                .parse::<usize>()
+                .map_err(|_| Error::Invalid("bencode: bad length".to_string()))?;
+            *pos += 1;
+            if *pos + length > data.len() {
+                return Err(Error::Invalid("bencode: string runs past the end".to_string()));
+            }
+            let bytes = data[*pos..*pos + length].to_vec();
+            *pos += length;
+            Ok(Bencode::Bytes(bytes))
+        }
+        other => Err(Error::Invalid(format!(
+            "bencode: unexpected byte 0x{:02X}",
+            other
+        ))),
+    }
+}
+
+/// Read a `.torrent` file: name, piece size, total length and the file list.
+///
+/// This reads the metadata; it does not download anything and does not speak to
+/// a tracker.
+pub fn parse_torrent(path: &Path) -> Result<TorrentMetadata> {
+    let data = fs::read(path)?;
+    let mut pos = 0usize;
+    let root = parse_bencode(&data, &mut pos)?;
+
+    let announce = root.get("announce").and_then(|v| v.as_text());
+    let info = root
+        .get("info")
+        .ok_or_else(|| Error::Invalid("not a torrent: no info dictionary".to_string()))?;
+
+    let name = info.get("name").and_then(|v| v.as_text()).unwrap_or_default();
+    let piece_length = info
+        .get("piece length")
+        .and_then(|v| v.as_int())
+        .unwrap_or(0) as u64;
+
+    let piece_count = info
+        .get("pieces")
+        .and_then(|v| v.as_bytes())
+        .map(|p| p.len() / 20)
+        .unwrap_or(0);
+
+    let mut files = Vec::new();
+    let mut total = 0u64;
+
+    if let Some(Bencode::List(entries)) = info.get("files") {
+        for entry in entries {
+            let length = entry.get("length").and_then(|v| v.as_int()).unwrap_or(0) as u64;
+            let mut parts: Vec<String> = Vec::new();
+            if let Some(Bencode::List(path_parts)) = entry.get("path") {
+                for part in path_parts {
+                    if let Some(text) = part.as_text() {
+                        parts.push(text);
+                    }
+                }
+            }
+            total += length;
+            files.push(TorrentFileItem {
+                path: parts.join("/"),
+                length,
+            });
+        }
+    } else if let Some(length) = info.get("length").and_then(|v| v.as_int()) {
+        total = length as u64;
+        files.push(TorrentFileItem {
+            path: name.clone(),
+            length: total,
+        });
+    }
+
+    Ok(TorrentMetadata {
+        announce,
+        name,
+        piece_length,
+        piece_count,
+        total_bytes: total,
+        files,
+    })
+}
+
+/// Open a TCP connection and time it. Says nothing about what is behind it.
+pub fn probe_tcp(host: &str, port: u16, timeout_ms: u64) -> Result<ProbeResult> {
+    use std::net::{TcpStream, ToSocketAddrs};
+    use std::time::{Duration, Instant};
+
+    let timeout = Duration::from_millis(timeout_ms.max(1));
+    let address = format!("{}:{}", host, port);
+
+    let mut resolved = match address.to_socket_addrs() {
+        Ok(iter) => iter,
+        Err(e) => {
+            return Ok(ProbeResult {
+                host: host.to_string(),
+                port,
+                connected: false,
+                latency_ms: 0,
+                detail: format!("could not resolve '{}': {}", address, e),
+            })
+        }
+    };
+
+    let target = match resolved.next() {
+        Some(addr) => addr,
+        None => {
+            return Ok(ProbeResult {
+                host: host.to_string(),
+                port,
+                connected: false,
+                latency_ms: 0,
+                detail: format!("'{}' resolved to no addresses", address),
+            })
+        }
+    };
+
+    let started = Instant::now();
+    match TcpStream::connect_timeout(&target, timeout) {
+        Ok(_) => Ok(ProbeResult {
+            host: host.to_string(),
+            port,
+            connected: true,
+            latency_ms: started.elapsed().as_millis() as u64,
+            detail: format!("connected to {}", target),
+        }),
+        Err(e) => Ok(ProbeResult {
+            host: host.to_string(),
+            port,
+            connected: false,
+            latency_ms: started.elapsed().as_millis() as u64,
+            detail: format!("{}", e),
+        }),
+    }
+}
+
+/// Build the two UPnP payloads a port mapping needs.
+///
+/// These are strings, not requests: nothing is sent, and no router is asked for
+/// anything. Generating them is the part that is easy to get wrong; sending
+/// them is the part that needs a network and a device that agrees.
+pub fn upnp_payloads(external_port: u16, internal_port: u16, internal_ip: &str, protocol: &str) -> UpnpPayloads {
+    let proto = match protocol.to_uppercase().as_str() {
+        "TCP" => "TCP",
+        _ => "UDP",
+    };
+
+    let ssdp_discovery = format!(
+        "M-SEARCH * HTTP/1.1\r\n\
+HOST: 239.255.255.250:1900\r\n\
+MAN: \"ssdp:discover\"\r\n\
+MX: 2\r\n\
+ST: urn:schemas-upnp-org:service:WANIPConnection:1\r\n\
+\r\n"
+    );
+
+    let soap_add_port_mapping = format!(
+        "<?xml version=\"1.0\"?>\n\
+<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" \
+s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n\
+  <s:Body>\n\
+    <u:AddPortMapping xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\">\n\
+      <NewRemoteHost></NewRemoteHost>\n\
+      <NewExternalPort>{}</NewExternalPort>\n\
+      <NewProtocol>{}</NewProtocol>\n\
+      <NewInternalPort>{}</NewInternalPort>\n\
+      <NewInternalClient>{}</NewInternalClient>\n\
+      <NewEnabled>1</NewEnabled>\n\
+      <NewPortMappingDescription>savehorse</NewPortMappingDescription>\n\
+      <NewLeaseDuration>0</NewLeaseDuration>\n\
+    </u:AddPortMapping>\n\
+  </s:Body>\n\
+</s:Envelope>\n",
+        external_port, proto, internal_port, internal_ip
+    );
+
+    UpnpPayloads {
+        ssdp_discovery,
+        soap_add_port_mapping,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -634,6 +983,71 @@ mod tests {
         join_chunks(&parts.join("big.bin.001"), Some(&auto)).unwrap();
         assert_eq!(fs::read(&auto).unwrap(), payload);
         let _ = fs::remove_dir_all(&dir);
+    }
+
+
+    #[test]
+    fn segments_cover_the_whole_file() {
+        let plans = plan_segments(1000, 4);
+        assert_eq!(plans.len(), 4);
+        assert_eq!(plans[0].start_byte, 0);
+        assert_eq!(plans[0].range_header, "bytes=0-249");
+        assert_eq!(plans[3].end_byte, 999, "the last segment takes the remainder");
+
+        let covered: u64 = plans.iter().map(|p| p.length_bytes).sum();
+        assert_eq!(covered, 1000, "no gaps, no overlap");
+
+        assert!(plan_segments(0, 4).is_empty());
+        assert!(plan_segments(100, 0).is_empty());
+    }
+
+    #[test]
+    fn parses_a_torrent() {
+        let dir = scratch("torrent");
+        let file = dir.join("sample.torrent");
+
+        // A minimal single-file torrent, hand-encoded.
+        let mut body = Vec::new();
+        body.extend_from_slice(b"d8:announce18:http://tracker/ann4:infod6:lengthi1024e4:name8:file.bin12:piece lengthi16384e6:pieces20:");
+        body.extend_from_slice(&[0u8; 20]);
+        body.extend_from_slice(b"ee");
+        fs::write(&file, &body).unwrap();
+
+        let meta = parse_torrent(&file).unwrap();
+        assert_eq!(meta.name, "file.bin");
+        assert_eq!(meta.piece_length, 16384);
+        assert_eq!(meta.piece_count, 1);
+        assert_eq!(meta.total_bytes, 1024);
+        assert_eq!(meta.files.len(), 1);
+        assert_eq!(meta.announce.as_deref(), Some("http://tracker/ann"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bencode_rejects_nonsense() {
+        let dir = scratch("bencode-bad");
+        let file = dir.join("bad.torrent");
+        fs::write(&file, b"not a torrent").unwrap();
+        assert!(parse_torrent(&file).is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn probe_reports_a_refusal_rather_than_failing() {
+        // Port 1 on localhost is almost certainly closed; the point is that a
+        // refused connection is a result, not an error.
+        let result = probe_tcp("127.0.0.1", 1, 300).unwrap();
+        assert!(!result.connected);
+        assert!(!result.detail.is_empty());
+    }
+
+    #[test]
+    fn upnp_payloads_are_well_formed() {
+        let payloads = upnp_payloads(8080, 80, "192.168.1.10", "tcp");
+        assert!(payloads.ssdp_discovery.starts_with("M-SEARCH * HTTP/1.1"));
+        assert!(payloads.soap_add_port_mapping.contains("<NewExternalPort>8080</NewExternalPort>"));
+        assert!(payloads.soap_add_port_mapping.contains("<NewProtocol>TCP</NewProtocol>"));
+        assert!(payloads.soap_add_port_mapping.contains("192.168.1.10"));
     }
 
     #[test]

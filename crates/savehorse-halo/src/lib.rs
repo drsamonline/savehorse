@@ -624,6 +624,134 @@ pub fn convert_raw_to_iso(source: &Path, output: &Path) -> Result<ConvertResult>
     })
 }
 
+
+// ---------------------------------------------------------------------------
+// CUE sheets and cover art (from optic)
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct CueReport {
+    pub image: String,
+    pub cue_path: String,
+    pub track_mode: String,
+    pub content: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct CoverReport {
+    pub image: String,
+    pub svg_path: String,
+    pub volume_id: String,
+    pub files_listed: usize,
+    pub bytes: usize,
+}
+
+/// Write a CUE sheet pointing at a binary image.
+///
+/// The format is three lines and has been for thirty years; the only decision
+/// is which track mode to declare.
+pub fn write_cue_sheet(image: &Path, cue_path: &Path, track_mode: &str) -> Result<CueReport> {
+    let name = image
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "disc.bin".to_string());
+
+    let mode = if track_mode.trim().is_empty() {
+        "MODE1/2048"
+    } else {
+        track_mode.trim()
+    };
+
+    let content = format!(
+        "FILE \"{}\" BINARY\n  TRACK 01 {}\n    INDEX 01 00:00:00\n",
+        name, mode
+    );
+
+    if let Some(parent) = cue_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    fs::write(cue_path, &content)?;
+
+    Ok(CueReport {
+        image: image.to_string_lossy().to_string(),
+        cue_path: cue_path.to_string_lossy().to_string(),
+        track_mode: mode.to_string(),
+        content,
+    })
+}
+
+fn svg_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+/// Render a jewel-case insert as SVG: the volume label and what is on the disc.
+pub fn write_cover_art(image: &Path, out_path: &Path) -> Result<CoverReport> {
+    let info = read_metadata(image)?;
+    let mut lines = String::new();
+    let shown = info.entries.iter().take(12);
+    let mut listed = 0usize;
+
+    for (i, entry) in shown.enumerate() {
+        listed += 1;
+        lines.push_str(&format!(
+            "<text x=\"60\" y=\"{}\" class=\"f\">{}</text>\n",
+            250 + i * 26,
+            svg_escape(&entry.name)
+        ));
+    }
+    if info.entries.len() > listed {
+        lines.push_str(&format!(
+            "<text x=\"60\" y=\"{}\" class=\"f dim\">and {} more</text>\n",
+            250 + listed * 26,
+            info.entries.len() - listed
+        ));
+    }
+
+    let svg = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 600 600\" width=\"600\" height=\"600\">\n\
+<defs><style>\n\
+  .bg {{ fill: #0b0d10; }}\n\
+  .frame {{ fill: none; stroke: #2a313c; stroke-width: 2; }}\n\
+  .title {{ font-family: Segoe UI, sans-serif; font-size: 30px; font-weight: 700; fill: #d8ff4f; }}\n\
+  .sub {{ font-family: ui-monospace, monospace; font-size: 13px; fill: #98a2b0; }}\n\
+  .f {{ font-family: ui-monospace, monospace; font-size: 14px; fill: #e9edf2; }}\n\
+  .dim {{ fill: #5d6875; }}\n\
+</style></defs>\n\
+<rect class=\"bg\" width=\"600\" height=\"600\" rx=\"18\"/>\n\
+<rect class=\"frame\" x=\"24\" y=\"24\" width=\"552\" height=\"552\" rx=\"10\"/>\n\
+<text x=\"60\" y=\"96\" class=\"title\">{volume}</text>\n\
+<text x=\"60\" y=\"128\" class=\"sub\">{files} file(s) &middot; {sectors} sector(s)</text>\n\
+<line x1=\"60\" y1=\"160\" x2=\"540\" y2=\"160\" stroke=\"#2a313c\" stroke-width=\"1\"/>\n\
+{lines}\
+<text x=\"60\" y=\"548\" class=\"sub dim\">savehorse halo</text>\n\
+</svg>\n",
+        volume = svg_escape(&info.volume_id),
+        files = info.entries.len(),
+        sectors = info.total_sectors,
+        lines = lines
+    );
+
+    if let Some(parent) = out_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    fs::write(out_path, &svg)?;
+
+    Ok(CoverReport {
+        image: image.to_string_lossy().to_string(),
+        svg_path: out_path.to_string_lossy().to_string(),
+        volume_id: info.volume_id,
+        files_listed: listed,
+        bytes: svg.len(),
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -808,6 +936,45 @@ mod tests {
 
         let converted = fs::read(&out).unwrap();
         assert!(converted.iter().all(|b| *b == 0x42), "payload only, no header");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+
+    #[test]
+    fn writes_a_cue_sheet() {
+        let dir = scratch("cue");
+        let image = dir.join("disc.bin");
+        fs::write(&image, b"x").unwrap();
+        let cue = dir.join("disc.cue");
+
+        let report = write_cue_sheet(&image, &cue, "").unwrap();
+        assert_eq!(report.track_mode, "MODE1/2048");
+        let text = fs::read_to_string(&cue).unwrap();
+        assert!(text.contains("FILE \"disc.bin\" BINARY"));
+        assert!(text.contains("TRACK 01 MODE1/2048"));
+        assert!(text.contains("INDEX 01 00:00:00"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn renders_cover_art_from_an_image() {
+        let dir = scratch("cover");
+        let src = dir.join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(src.join("readme.txt"), b"hello").unwrap();
+
+        let image = dir.join("t.iso");
+        create_image(&src, &image, "MYVOL").unwrap();
+
+        let out = dir.join("cover.svg");
+        let report = write_cover_art(&image, &out).unwrap();
+        assert_eq!(report.volume_id, "MYVOL");
+        assert_eq!(report.files_listed, 1);
+
+        let svg = fs::read_to_string(&out).unwrap();
+        assert!(svg.starts_with("<svg"));
+        assert!(svg.contains("MYVOL"));
+        assert!(svg.contains("README.TXT"));
         let _ = fs::remove_dir_all(&dir);
     }
 

@@ -199,6 +199,17 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "aegis.harden" => aegis_harden(req),
         "pulse.hash" => pulse_hash(req),
         "pulse.temp" => pulse_temp(req),
+        "halo.cue" => halo_cue(req),
+        "halo.cover" => halo_cover(req),
+        "iris.ico" => iris_ico(req),
+        "iris.sheet" => iris_sheet(req),
+        "arc.chunk" => arc_chunk(req),
+        "arc.torrent" => arc_torrent(req),
+        "arc.probe" => arc_probe(req),
+        "arc.upnp" => arc_upnp(req),
+        "scout.treemap" => scout_treemap(req),
+        "scout.inventory" => scout_inventory(req),
+        "scout.diff" => scout_diff(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -1437,6 +1448,237 @@ fn pulse_temp(req: &Request) -> Result<Outcome> {
         text.push_str(&format!("  {:>10}  {}\n", entry.size_human, entry.path));
     }
     text.push_str("\nnothing was deleted\n");
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+
+// ---------------------------------------------------------------------------
+// the tails: halo, iris, arc and scout extras
+// ---------------------------------------------------------------------------
+
+fn halo_cue(req: &Request) -> Result<Outcome> {
+    let image = PathBuf::from(req.position(0, "image")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let mode = req.value("mode").unwrap_or("");
+
+    let r = savehorse_halo::write_cue_sheet(&image, &out, mode)?;
+
+    Ok(Outcome::new(
+        format!("wrote '{}'\n\n{}", r.cue_path, r.content),
+        to_json(&r)?,
+    ))
+}
+
+fn halo_cover(req: &Request) -> Result<Outcome> {
+    let image = PathBuf::from(req.position(0, "image")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+
+    let r = savehorse_halo::write_cover_art(&image, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "wrote '{}' — volume '{}', {} file(s) listed, {} byte(s)\n",
+            r.svg_path, r.volume_id, r.files_listed, r.bytes
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn iris_ico(req: &Request) -> Result<Outcome> {
+    let source = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+
+    let sizes: Vec<u32> = match req.value("sizes") {
+        Some(list) if !list.trim().is_empty() => list
+            .split(',')
+            .filter_map(|s| s.trim().parse::<u32>().ok())
+            .collect(),
+        _ => vec![16, 32, 48, 256],
+    };
+
+    let r = savehorse_iris::write_ico(&source, &out, &sizes)?;
+
+    Ok(Outcome::new(
+        format!(
+            "wrote '{}' with {} size(s): {} — {} byte(s)\n",
+            r.output_file,
+            r.sizes.len(),
+            r.sizes.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
+            r.output_byte_size
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn iris_sheet(req: &Request) -> Result<Outcome> {
+    let source = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let cell = req.number("cell")?.unwrap_or(128) as u32;
+    let columns = req.number("columns")?.unwrap_or(4);
+
+    let r = savehorse_iris::contact_sheet_svg(&source, &out, cell, columns)?;
+
+    Ok(Outcome::new(
+        format!(
+            "wrote '{}' — {} image(s) in {} column(s), {} byte(s)\n",
+            r.output_file, r.images, r.columns, r.output_byte_size
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn arc_chunk(req: &Request) -> Result<Outcome> {
+    let total = req
+        .size("total")?
+        .ok_or_else(|| Error::Invalid("--total is required, e.g. 100m".to_string()))?;
+    let segments = req.number("segments")?.unwrap_or(8);
+
+    let plans = savehorse_arc::plan_segments(total, segments);
+
+    let mut text = format!("{} range(s) for {} byte(s)\n", plans.len(), total);
+    for plan in &plans {
+        text.push_str(&format!(
+            "  #{:<3} {:<22} {} byte(s)\n",
+            plan.segment_index, plan.range_header, plan.length_bytes
+        ));
+    }
+
+    Ok(Outcome::new(text, to_json(&plans)?))
+}
+
+fn arc_torrent(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let m = savehorse_arc::parse_torrent(&path)?;
+
+    let mut text = format!(
+        "name       {}\ntotal      {} byte(s) in {} file(s)\npieces     {} x {} byte(s)\ntracker    {}\n",
+        m.name,
+        m.total_bytes,
+        m.files.len(),
+        m.piece_count,
+        m.piece_length,
+        m.announce.clone().unwrap_or_else(|| "none".to_string())
+    );
+    for file in m.files.iter().take(20) {
+        text.push_str(&format!("  {:>12}  {}\n", file.length, file.path));
+    }
+
+    Ok(Outcome::new(text, to_json(&m)?))
+}
+
+fn arc_probe(req: &Request) -> Result<Outcome> {
+    let host = required_value(req, "host")?;
+    let port = req
+        .number("port")?
+        .ok_or_else(|| Error::Invalid("--port is required".to_string()))? as u16;
+    let timeout = req.number("timeout")?.unwrap_or(2000) as u64;
+
+    let r = savehorse_arc::probe_tcp(host, port, timeout)?;
+
+    let text = format!(
+        "{}:{}\n{}\n{} ms\n{}\n",
+        r.host,
+        r.port,
+        if r.connected { "connected" } else { "not connected" },
+        r.latency_ms,
+        r.detail
+    );
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn arc_upnp(req: &Request) -> Result<Outcome> {
+    let external = req
+        .number("external-port")?
+        .ok_or_else(|| Error::Invalid("--external-port is required".to_string()))? as u16;
+    let internal = req
+        .number("internal-port")?
+        .ok_or_else(|| Error::Invalid("--internal-port is required".to_string()))? as u16;
+    let ip = required_value(req, "ip")?;
+    let protocol = req.value("protocol").unwrap_or("TCP");
+
+    let payloads = savehorse_arc::upnp_payloads(external, internal, ip, protocol);
+
+    let text = format!(
+        "SSDP DISCOVERY\n{}\nSOAP ADD PORT MAPPING\n{}\n(nothing was sent: these are the payloads only)\n",
+        payloads.ssdp_discovery, payloads.soap_add_port_mapping
+    );
+
+    Ok(Outcome::new(text, to_json(&payloads)?))
+}
+
+fn scout_treemap(req: &Request) -> Result<Outcome> {
+    let root = PathBuf::from(req.position(0, "path")?);
+    let report = savehorse_scout::analyze_treemap(&root)?;
+
+    let mut text = format!(
+        "{} — {} in {} item(s)\n",
+        report.root_path,
+        savehorse_core::format_bytes(report.total_size_bytes),
+        report.total_items
+    );
+    for item in report.items.iter().take(15) {
+        text.push_str(&format!(
+            "  {:>6.2}%  {:>10}  {}{}\n",
+            item.percentage,
+            savehorse_core::format_bytes(item.size_bytes),
+            item.name,
+            if item.is_dir { "/" } else { "" }
+        ));
+    }
+
+    match req.value("out") {
+        Some(dest) if !dest.trim().is_empty() => {
+            let width = req.number("width")?.unwrap_or(800) as u32;
+            let svg = savehorse_scout::render_treemap_svg(&report, width);
+            fs::write(dest, &svg)?;
+            text.push_str(&format!("\nwrote '{}'\n", dest));
+        }
+        _ => {}
+    }
+
+    Ok(Outcome::new(text, to_json(&report)?))
+}
+
+fn scout_inventory(req: &Request) -> Result<Outcome> {
+    let root = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_scout::inspect_directory(&root)?;
+
+    let text = format!(
+        "directory  {}\nfiles      {}\ndirs       {}\nbytes      {} ({})\ndepth      {}\nlargest    {} ({})\n",
+        r.root_directory,
+        r.total_files,
+        r.total_directories,
+        r.total_bytes,
+        savehorse_core::format_bytes(r.total_bytes),
+        r.max_directory_depth,
+        r.largest_file_name,
+        savehorse_core::format_bytes(r.largest_file_size)
+    );
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn scout_diff(req: &Request) -> Result<Outcome> {
+    let a = PathBuf::from(req.position(0, "a")?);
+    let b = PathBuf::from(req.position(1, "b")?);
+
+    let r = savehorse_scout::diff_files(&a, &b)?;
+
+    let text = if r.is_identical {
+        format!("identical — {} byte(s) each\n", r.size_a)
+    } else {
+        format!(
+            "different\n  a        {} ({} byte(s))\n  b        {} ({} byte(s))\n  first at 0x{:X}\n  {} byte(s) differ\n",
+            r.file_a,
+            r.size_a,
+            r.file_b,
+            r.size_b,
+            r.first_difference_offset.unwrap_or(0),
+            r.differing_bytes_count
+        )
+    };
 
     Ok(Outcome::new(text, to_json(&r)?))
 }

@@ -554,6 +554,150 @@ const P_PATH_OPT: Param = Param {
     options: &[],
 };
 
+const P_MODE: Param = Param {
+    name: "mode",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: false,
+    help: "Track mode to declare in the CUE sheet",
+    options: &["MODE1/2048", "MODE1/2352", "MODE2/2352"],
+};
+
+const P_SIZES: Param = Param {
+    name: "sizes",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Comma-separated icon sizes, e.g. 16,32,48,256",
+    options: &[],
+};
+
+const P_CELL: Param = Param {
+    name: "cell",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Thumbnail size in the sheet (default 128)",
+    options: &[],
+};
+
+const P_COLUMNS: Param = Param {
+    name: "columns",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Columns in the sheet (default 4)",
+    options: &[],
+};
+
+const P_TOTAL: Param = Param {
+    name: "total",
+    kind: ParamKind::Size,
+    positional: false,
+    required: true,
+    help: "Total size to split, e.g. 100m",
+    options: &[],
+};
+
+const P_SEGMENTS: Param = Param {
+    name: "segments",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "How many ranges to plan (default 8)",
+    options: &[],
+};
+
+const P_HOST: Param = Param {
+    name: "host",
+    kind: ParamKind::Text,
+    positional: false,
+    required: true,
+    help: "Host name or address",
+    options: &[],
+};
+
+const P_PORT: Param = Param {
+    name: "port",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "TCP port to connect to",
+    options: &[],
+};
+
+const P_TIMEOUT: Param = Param {
+    name: "timeout",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Milliseconds to wait (default 2000)",
+    options: &[],
+};
+
+const P_EXT_PORT: Param = Param {
+    name: "external-port",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Port on the router",
+    options: &[],
+};
+
+const P_INT_PORT: Param = Param {
+    name: "internal-port",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Port on this machine",
+    options: &[],
+};
+
+const P_IP: Param = Param {
+    name: "ip",
+    kind: ParamKind::Text,
+    positional: false,
+    required: true,
+    help: "Internal address the router should forward to",
+    options: &[],
+};
+
+const P_PROTOCOL: Param = Param {
+    name: "protocol",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: false,
+    help: "Transport to map",
+    options: &["TCP", "UDP"],
+};
+
+const P_PATH_A: Param = Param {
+    name: "a",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "First file to compare",
+    options: &[],
+};
+
+const P_PATH_B: Param = Param {
+    name: "b",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "Second file to compare",
+    options: &[],
+};
+
+const P_WIDTH_OPT: Param = Param {
+    name: "width",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Width of the rendered chart (default 800)",
+    options: &[],
+};
+
 const P_TOP: Param = Param {
     name: "top",
     kind: ParamKind::Number,
@@ -841,6 +985,36 @@ const AEGIS_SCAN: &[Param] = &[P_PATH, P_SIGNATURES];
 
 const PULSE_TEMP: &[Param] = &[P_PATH_OPT, P_TOP];
 
+
+// ---------------------------------------------------------------------------
+// halo — disc extras
+// ---------------------------------------------------------------------------
+
+const HALO_CUE: &[Param] = &[P_IMAGE, P_OUT, P_MODE];
+const HALO_COVER: &[Param] = &[P_IMAGE, P_OUT];
+
+// ---------------------------------------------------------------------------
+// iris — image extras
+// ---------------------------------------------------------------------------
+
+const IRIS_ICO: &[Param] = &[P_PATH, P_OUT, P_SIZES];
+const IRIS_SHEET: &[Param] = &[P_PATH, P_OUT, P_CELL, P_COLUMNS];
+
+// ---------------------------------------------------------------------------
+// arc — transfer
+// ---------------------------------------------------------------------------
+
+const ARC_CHUNK: &[Param] = &[P_TOTAL, P_SEGMENTS];
+const ARC_PROBE: &[Param] = &[P_HOST, P_PORT, P_TIMEOUT];
+const ARC_UPNP: &[Param] = &[P_EXT_PORT, P_INT_PORT, P_IP, P_PROTOCOL];
+
+// ---------------------------------------------------------------------------
+// scout — space and comparison
+// ---------------------------------------------------------------------------
+
+const SCOUT_TREEMAP: &[Param] = &[P_PATH, P_OUT_OPT, P_WIDTH_OPT];
+const SCOUT_DIFF: &[Param] = &[P_PATH_A, P_PATH_B];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -886,8 +1060,8 @@ pub static OPS: &[Op] = &[
     Op { id: "halo.extract", module: "halo", name: "extract", summary: "Extract every file from a disc image", danger: Danger::Safe, status: Status::Implemented, params: HALO_EXTRACT },
     Op { id: "halo.verify", module: "halo", name: "verify", summary: "Check volume descriptors and checksums", danger: Danger::Safe, status: Status::Implemented, params: HALO_IMAGE_ONE },
     Op { id: "halo.convert", module: "halo", name: "convert", summary: "Convert raw 2352-byte sectors to 2048-byte ISO", danger: Danger::Safe, status: Status::Implemented, params: HALO_CONVERT },
-    Op { id: "halo.cue",     module: "halo", name: "cue",     summary: "Write a CUE sheet for a disc image",            danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "halo.cover",   module: "halo", name: "cover",   summary: "Generate disc label and case artwork",          danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "halo.cue", module: "halo", name: "cue", summary: "Write a CUE sheet for a disc image", danger: Danger::Safe, status: Status::Implemented, params: HALO_CUE },
+    Op { id: "halo.cover", module: "halo", name: "cover", summary: "Generate disc label and case artwork", danger: Danger::Safe, status: Status::Implemented, params: HALO_COVER },
 
     // -- iris --------------------------------------------------------------
     Op { id: "iris.info", module: "iris", name: "info", summary: "Dimensions, format, bit depth, aspect ratio", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
@@ -896,8 +1070,8 @@ pub static OPS: &[Op] = &[
     Op { id: "iris.transform", module: "iris", name: "transform", summary: "Rotate and flip", danger: Danger::Safe, status: Status::Implemented, params: IRIS_TRANSFORM },
     Op { id: "iris.stats", module: "iris", name: "stats", summary: "Colour and luminance statistics", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "iris.batch", module: "iris", name: "batch", summary: "Apply one operation to a folder of images", danger: Danger::Safe, status: Status::Implemented, params: IRIS_BATCH },
-    Op { id: "iris.ico",       module: "iris", name: "ico",       summary: "Build a multi-resolution Windows icon",       danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "iris.sheet",     module: "iris", name: "sheet",     summary: "Render a contact sheet",                      danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "iris.ico", module: "iris", name: "ico", summary: "Build a multi-resolution Windows icon", danger: Danger::Safe, status: Status::Implemented, params: IRIS_ICO },
+    Op { id: "iris.sheet", module: "iris", name: "sheet", summary: "Render a contact sheet", danger: Danger::Safe, status: Status::Implemented, params: IRIS_SHEET },
 
     // -- arc ---------------------------------------------------------------
     Op { id: "arc.create", module: "arc", name: "create", summary: "Pack files into an archive", danger: Danger::Safe, status: Status::Implemented, params: ARC_CREATE },
@@ -906,10 +1080,10 @@ pub static OPS: &[Op] = &[
     Op { id: "arc.test", module: "arc", name: "test", summary: "Verify archive integrity", danger: Danger::Safe, status: Status::Implemented, params: ARC_ONE },
     Op { id: "arc.split", module: "arc", name: "split", summary: "Split a large file into volumes", danger: Danger::Safe, status: Status::Implemented, params: ARC_SPLIT },
     Op { id: "arc.join", module: "arc", name: "join", summary: "Reassemble split volumes", danger: Danger::Safe, status: Status::Implemented, params: ARC_JOIN },
-    Op { id: "arc.chunk",   module: "arc", name: "chunk",   summary: "Plan a multi-segment download",             danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.torrent", module: "arc", name: "torrent", summary: "Read metadata from a .torrent file",        danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.probe",   module: "arc", name: "probe",   summary: "Probe a TCP endpoint and time it",          danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.upnp",    module: "arc", name: "upnp",    summary: "Build UPnP port-mapping payloads",          danger: Danger::Safe,         status: Status::Planned, params: &[] },
+    Op { id: "arc.chunk", module: "arc", name: "chunk", summary: "Plan a multi-segment download", danger: Danger::Safe, status: Status::Implemented, params: ARC_CHUNK },
+    Op { id: "arc.torrent", module: "arc", name: "torrent", summary: "Read metadata from a .torrent file", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "arc.probe", module: "arc", name: "probe", summary: "Probe a TCP endpoint and time it", danger: Danger::Safe, status: Status::Implemented, params: ARC_PROBE },
+    Op { id: "arc.upnp", module: "arc", name: "upnp", summary: "Build UPnP port-mapping payloads", danger: Danger::Safe, status: Status::Implemented, params: ARC_UPNP },
 
     // -- sift --------------------------------------------------------------
     Op { id: "sift.strings", module: "sift", name: "strings", summary: "Extract printable ASCII and UTF-16 strings",     danger: Danger::Safe,         status: Status::Implemented, params: SIFT_STRINGS },
@@ -929,15 +1103,14 @@ pub static OPS: &[Op] = &[
     Op { id: "glyph.encoding", module: "glyph", name: "encoding", summary: "Detect encoding and line endings", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "glyph.readability", module: "glyph", name: "readability", summary: "Word count, reading time, readability", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "glyph.metrics", module: "glyph", name: "metrics", summary: "Code lines, comments, blanks, density", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
-    Op { id: "glyph.search",      module: "glyph", name: "search",      summary: "Search a document for text",                danger: Danger::Safe, status: Status::Planned, params: &[] },
 
     // -- scout -------------------------------------------------------------
     Op { id: "scout.catalog",    module: "scout", name: "catalog",    summary: "Catalogue a tree to table, JSON, CSV, Markdown or HTML", danger: Danger::Safe,         status: Status::Implemented, params: SCOUT_CATALOG },
     Op { id: "scout.duplicates", module: "scout", name: "duplicates", summary: "Find byte-identical files by SHA-256",                   danger: Danger::Safe,         status: Status::Implemented, params: SCOUT_DUPLICATES },
     Op { id: "scout.clean",      module: "scout", name: "clean",      summary: "Remove duplicate copies, preview first",                 danger: Danger::Irreversible, status: Status::Implemented, params: SCOUT_CLEAN },
-    Op { id: "scout.treemap",    module: "scout", name: "treemap",    summary: "Render space usage as a treemap",                        danger: Danger::Safe,         status: Status::Planned,     params: &[] },
-    Op { id: "scout.inventory",  module: "scout", name: "inventory",  summary: "Depth, capacity and largest files",                      danger: Danger::Safe,         status: Status::Planned,     params: &[] },
-    Op { id: "scout.diff",       module: "scout", name: "diff",       summary: "Compare two files byte by byte",                         danger: Danger::Safe,         status: Status::Planned,     params: &[] },
+    Op { id: "scout.treemap", module: "scout", name: "treemap", summary: "Render space usage as a treemap", danger: Danger::Safe, status: Status::Implemented, params: SCOUT_TREEMAP },
+    Op { id: "scout.inventory", module: "scout", name: "inventory", summary: "Depth, capacity and largest files", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "scout.diff", module: "scout", name: "diff", summary: "Compare two files byte by byte", danger: Danger::Safe, status: Status::Implemented, params: SCOUT_DIFF },
 
     // -- morph -------------------------------------------------------------
     Op { id: "morph.rename", module: "morph", name: "rename", summary: "Rename by pattern with collision safety", danger: Danger::Destructive, status: Status::Implemented, params: MORPH_RENAME },
@@ -1020,8 +1193,8 @@ mod tests {
     #[test]
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
-        assert_eq!(total, 88, "the plan promises 88 operations");
-        assert_eq!(implemented, 57, "sift 9, scout 3, glyph 6, halo 5, iris 6, arc 6, revive 7, forge 6, morph 2, aegis 5, pulse 2");
+        assert_eq!(total, 87, "88 declared, minus glyph.search which sift.search supersedes");
+        assert_eq!(implemented, 68, "everything except the system, window, audio and registry operations");
     }
 
     #[test]

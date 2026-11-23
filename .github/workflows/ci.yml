@@ -187,6 +187,23 @@ jobs:
           cargo run --quiet -- pulse hash smoke/doc.md
           cargo run --quiet -- pulse temp smoke --top 3
 
+          # the tails: halo extras, iris extras, arc transfer, scout space
+          cargo run --quiet -- halo cue smoke/test.iso --out smoke/disc.cue
+          test -s smoke/disc.cue
+          cargo run --quiet -- halo cover smoke/test.iso --out smoke/cover.svg
+          test -s smoke/cover.svg
+          cargo run --quiet -- iris ico smoke/px.png --out smoke/app.ico --sizes 16,32
+          test -s smoke/app.ico
+          cargo run --quiet -- iris sheet smoke/imgout --out smoke/sheet.svg --cell 32 --columns 2
+          test -s smoke/sheet.svg
+          cargo run --quiet -- arc chunk --total 100k --segments 4
+          cargo run --quiet -- arc probe --host 127.0.0.1 --port 1 --timeout 300
+          cargo run --quiet -- arc upnp --external-port 8080 --internal-port 80 --ip 192.168.1.10
+          cargo run --quiet -- scout treemap smoke --out smoke/tree.svg
+          test -s smoke/tree.svg
+          cargo run --quiet -- scout inventory smoke
+          cargo run --quiet -- scout diff smoke/test.iso smoke/rejoined.iso
+
           # a planned operation must refuse, and say why.
           # pulse.services still needs a platform API, so it is the one that
           # refuses. (aegis shred held this role until it was ported.)

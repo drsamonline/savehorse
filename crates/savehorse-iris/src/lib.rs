@@ -368,6 +368,202 @@ pub fn batch_process(
     })
 }
 
+
+// ---------------------------------------------------------------------------
+// Icons and contact sheets (from prism)
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct IcoReport {
+    pub source_file: String,
+    pub output_file: String,
+    pub sizes: Vec<u32>,
+    pub output_byte_size: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct SheetReport {
+    pub source_dir: String,
+    pub output_file: String,
+    pub images: usize,
+    pub columns: usize,
+    pub output_byte_size: u64,
+}
+
+fn base64(data: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = *chunk.get(1).unwrap_or(&0) as u32;
+        let b2 = *chunk.get(2).unwrap_or(&0) as u32;
+        let triple = (b0 << 16) | (b1 << 8) | b2;
+
+        out.push(TABLE[((triple >> 18) & 0x3F) as usize] as char);
+        out.push(TABLE[((triple >> 12) & 0x3F) as usize] as char);
+        out.push(if chunk.len() > 1 {
+            TABLE[((triple >> 6) & 0x3F) as usize] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            TABLE[(triple & 0x3F) as usize] as char
+        } else {
+            '='
+        });
+    }
+    out
+}
+
+fn encode_png(img: &image::DynamicImage) -> Result<Vec<u8>> {
+    let mut buffer = Vec::new();
+    img.write_to(&mut std::io::Cursor::new(&mut buffer), image::ImageFormat::Png)
+        .map_err(|e| Error::Invalid(format!("could not encode PNG: {}", e)))?;
+    Ok(buffer)
+}
+
+/// Build a multi-resolution Windows `.ico` from one image.
+///
+/// Each entry is a PNG, which every Windows since Vista reads. The directory
+/// is the classic sixteen bytes per image.
+pub fn write_ico(source: &Path, out_path: &Path, sizes: &[u32]) -> Result<IcoReport> {
+    let img = open(source)?;
+    let mut wanted: Vec<u32> = sizes.iter().copied().filter(|s| *s > 0 && *s <= 256).collect();
+    wanted.sort_unstable();
+    wanted.dedup();
+    if wanted.is_empty() {
+        return Err(Error::Invalid(
+            "give at least one size between 1 and 256".to_string(),
+        ));
+    }
+
+    let mut payloads: Vec<(u32, Vec<u8>)> = Vec::with_capacity(wanted.len());
+    for size in &wanted {
+        let resized = img.thumbnail(*size, *size);
+        payloads.push((*size, encode_png(&resized)?));
+    }
+
+    let mut ico: Vec<u8> = Vec::new();
+    ico.extend_from_slice(&0u16.to_le_bytes()); // reserved
+    ico.extend_from_slice(&1u16.to_le_bytes()); // type: icon
+    ico.extend_from_slice(&(payloads.len() as u16).to_le_bytes());
+
+    let mut offset = 6 + payloads.len() * 16;
+    for (size, data) in &payloads {
+        // 256 is written as 0 in a single byte.
+        ico.push(if *size >= 256 { 0 } else { *size as u8 });
+        ico.push(if *size >= 256 { 0 } else { *size as u8 });
+        ico.push(0); // palette colours
+        ico.push(0); // reserved
+        ico.extend_from_slice(&1u16.to_le_bytes()); // colour planes
+        ico.extend_from_slice(&32u16.to_le_bytes()); // bits per pixel
+        ico.extend_from_slice(&(data.len() as u32).to_le_bytes());
+        ico.extend_from_slice(&(offset as u32).to_le_bytes());
+        offset += data.len();
+    }
+    for (_, data) in &payloads {
+        ico.extend_from_slice(data);
+    }
+
+    ensure_parent(out_path)?;
+    fs::write(out_path, &ico)?;
+
+    Ok(IcoReport {
+        source_file: source.to_string_lossy().to_string(),
+        output_file: out_path.to_string_lossy().to_string(),
+        sizes: wanted,
+        output_byte_size: ico.len() as u64,
+    })
+}
+
+/// Render every image in a directory into one SVG contact sheet.
+///
+/// The thumbnails are embedded as data URIs, so the sheet is a single file you
+/// can send to someone.
+pub fn contact_sheet_svg(source_dir: &Path, out_path: &Path, cell: u32, columns: usize) -> Result<SheetReport> {
+    if !source_dir.is_dir() {
+        return Err(Error::Invalid(format!(
+            "'{}' is not a directory",
+            source_dir.display()
+        )));
+    }
+
+    let mut files: Vec<std::path::PathBuf> = fs::read_dir(source_dir)?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.is_file()
+                && p.extension()
+                    .and_then(|e| e.to_str())
+                    .map(|e| SOURCE_EXTENSIONS.contains(&e.to_lowercase().as_str()))
+                    .unwrap_or(false)
+        })
+        .collect();
+    files.sort();
+
+    let columns = columns.max(1);
+    let cell = cell.max(32);
+    let gap = 12u32;
+    let rows = (files.len() + columns - 1) / columns.max(1);
+    let width = columns as u32 * (cell + gap) + gap;
+    let height = rows.max(1) as u32 * (cell + gap + 18) + gap;
+
+    let mut body = String::new();
+    let mut placed = 0usize;
+
+    for (index, file) in files.iter().enumerate() {
+        let img = match image::open(file) {
+            Ok(i) => i,
+            Err(_) => continue,
+        };
+        let thumb = img.thumbnail(cell, cell);
+        let png = encode_png(&thumb)?;
+
+        let col = index % columns;
+        let row = index / columns;
+        let x = gap + col as u32 * (cell + gap);
+        let y = gap + row as u32 * (cell + gap + 18);
+
+        body.push_str(&format!(
+            "<image x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" href=\"data:image/png;base64,{}\"/>\n",
+            x, y, thumb.width(), thumb.height(), base64(&png)
+        ));
+        body.push_str(&format!(
+            "<text x=\"{}\" y=\"{}\" font-family=\"monospace\" font-size=\"9\" fill=\"#98a2b0\">{}</text>\n",
+            x,
+            y + cell + 12,
+            file.file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default()
+                .replace('&', "&amp;")
+                .replace('<', "&lt;")
+        ));
+        placed += 1;
+    }
+
+    let svg = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {w} {h}\" width=\"{w}\" height=\"{h}\">\n\
+<rect width=\"100%\" height=\"100%\" fill=\"#0b0d10\"/>\n\
+{body}\
+</svg>\n",
+        w = width,
+        h = height,
+        body = body
+    );
+
+    ensure_parent(out_path)?;
+    fs::write(out_path, &svg)?;
+
+    Ok(SheetReport {
+        source_dir: source_dir.to_string_lossy().to_string(),
+        output_file: out_path.to_string_lossy().to_string(),
+        images: placed,
+        columns,
+        output_byte_size: svg.len() as u64,
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -511,6 +707,53 @@ mod tests {
         assert_eq!(result.failed.len(), 1, "the broken file must be reported, not ignored");
         assert!(result.failed[0].contains("broken.png"));
         assert!(out.join("sample.bmp").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+
+    #[test]
+    fn writes_a_multi_size_ico() {
+        let dir = scratch("ico");
+        let src = make_sample(&dir);
+        let out = dir.join("app.ico");
+
+        let report = write_ico(&src, &out, &[16, 32, 256]).unwrap();
+        assert_eq!(report.sizes, vec![16, 32, 256]);
+
+        let bytes = fs::read(&out).unwrap();
+        assert_eq!(&bytes[0..2], &[0, 0], "reserved");
+        assert_eq!(&bytes[2..4], &[1, 0], "type: icon");
+        assert_eq!(&bytes[4..6], &[3, 0], "three images");
+        // 256 is encoded as 0 in the width byte of its directory entry.
+        assert_eq!(bytes[6 + 2 * 16], 0);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn ico_rejects_an_empty_size_list() {
+        let dir = scratch("ico-empty");
+        let src = make_sample(&dir);
+        assert!(write_ico(&src, &dir.join("a.ico"), &[]).is_err());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn builds_a_contact_sheet() {
+        let dir = scratch("sheet");
+        let src = dir.join("images");
+        fs::create_dir_all(&src).unwrap();
+        make_sample(&src);
+        let second = src.join("second.png");
+        fs::copy(src.join("sample.png"), &second).unwrap();
+
+        let out = dir.join("sheet.svg");
+        let report = contact_sheet_svg(&src, &out, 64, 2).unwrap();
+        assert_eq!(report.images, 2);
+        assert_eq!(report.columns, 2);
+
+        let svg = fs::read_to_string(&out).unwrap();
+        assert!(svg.contains("data:image/png;base64,"));
+        assert!(svg.contains("sample.png"));
         let _ = fs::remove_dir_all(&dir);
     }
 

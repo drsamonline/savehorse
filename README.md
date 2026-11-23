@@ -13,8 +13,8 @@ modules behind one command line and one desktop app.
 [![Desktop](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml/badge.svg)](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml)
 ![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platforms-windows%20%7C%20macos%20%7C%20linux-4b5563)
-![Operations](https://img.shields.io/badge/operations-57%20of%2088-d8ff4f)
-![Tests](https://img.shields.io/badge/tests-129%20passing-4fd48a)
+![Operations](https://img.shields.io/badge/operations-68%20of%2087-d8ff4f)
+![Tests](https://img.shields.io/badge/tests-142%20passing-4fd48a)
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20NC%201.0.0-ffb340)](LICENSE)
 
 [**Landing page**](https://drsamonline.github.io/savehorse/) ·
@@ -56,17 +56,17 @@ A migration in progress, not a finished product.
 | | |
 |---|---|
 | Modules | 13 |
-| Operations declared | 88 |
-| Operations ported and tested | **57** |
-| Tests, on Windows, macOS and Linux | 129 |
+| Operations declared | 87 |
+| Operations ported and tested | **68** |
+| Tests, on Windows, macOS and Linux | 142 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
-Ported so far: `sift` 9/9, `forge` 6/6, `revive` 7/7, `morph` 2/2, `glyph` 6/7,
-`iris` 6/8, `arc` 6/10, `halo` 5/7, `aegis` 5/6, `scout` 3/6, `pulse` 2/7.
+Ported so far: `sift` 9/9, `forge` 6/6, `revive` 7/7, `morph` 2/2, `glyph` 6/6,
+`iris` 8/8, `arc` 10/10, `halo` 7/7, `scout` 6/6, `aegis` 5/6, `pulse` 2/7.
 Still to come: the rest of `pulse` (5) and `pager` (9), which need cross-platform
-system and window APIs, `flux` (4), and the remainder of `scout`, `arc`, `halo`,
-`iris` and `glyph`.
+system and window APIs, `flux` (4), and `aegis.persistence` (1), which is a
+Windows registry audit.
 
 ## Quick start
 
@@ -150,12 +150,12 @@ manifest, so a new operation's booleans work without touching the CLI.
 |---|---|---|---|
 | `aegis` | Encrypt, shred, scan and audit | aegis + vault | 5 / 6 |
 | `forge` | Inspect and patch executables | forge | 6 / 6 |
-| `halo` | Author, read and convert disc images | halo + optic | 5 / 7 |
-| `iris` | Inspect, convert and transform images | iris + prism | 6 / 8 |
-| `arc` | Pack, split, join and transfer | arc + vortex | 6 / 10 |
+| `halo` | Author, read and convert disc images | halo + optic | 7 / 7 |
+| `iris` | Inspect, convert and transform images | iris + prism | 8 / 8 |
+| `arc` | Pack, split, join and transfer | arc + vortex | 10 / 10 |
 | `sift` | Find, extract and replace across files | sift + slate | 9 / 9 |
-| `glyph` | PDF, Markdown and readability | glyph | 6 / 7 |
-| `scout` | Catalogue, deduplicate and compare | scout + strata | 3 / 6 |
+| `glyph` | PDF, Markdown and readability | glyph | 6 / 6 |
+| `scout` | Catalogue, deduplicate and compare | scout + strata | 6 / 6 |
 | `morph` | Batch rename with preview and undo | morph + strata | 2 / 2 |
 | `pulse` | Hardware, processes and maintenance | pulse + beacon | 2 / 7 |
 | `pager` | Snap, pin and arrange windows | pager + dock | 0 / 9 |

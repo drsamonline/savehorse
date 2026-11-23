@@ -90,8 +90,8 @@ instead of colliding.
 | `halo.extract` | Extract every file | **ready** |
 | `halo.verify` | Volume descriptors and checksums | **ready** |
 | `halo.convert` | Raw 2352-byte sectors to 2048-byte ISO | **ready** |
-| `halo.cue` | Write a CUE sheet | planned |
-| `halo.cover` | Disc label and case artwork | planned |
+| `halo.cue` | Write a CUE sheet | **ready** |
+| `halo.cover` | Disc label and case artwork | **ready** |
 
 ## iris — Image Studio
 
@@ -106,8 +106,8 @@ and contact sheets.
 | `iris.transform` | Rotate and flip | **ready** |
 | `iris.stats` | Colour and luminance statistics | **ready** |
 | `iris.batch` | One operation across a folder | **ready** |
-| `iris.ico` | Multi-resolution Windows icon | planned |
-| `iris.sheet` | Contact sheet | planned |
+| `iris.ico` | Multi-resolution Windows icon | **ready** |
+| `iris.sheet` | Contact sheet | **ready** |
 
 ## arc — Archives
 
@@ -121,10 +121,10 @@ From `arc` (gen 2) and `vortex` (gen 1).
 | `arc.test` | Verify integrity | **ready** |
 | `arc.split` | Split into volumes | **ready** |
 | `arc.join` | Reassemble volumes | **ready** |
-| `arc.chunk` | Plan a multi-segment download | planned |
-| `arc.torrent` | Read `.torrent` metadata | planned |
-| `arc.probe` | Probe and time a TCP endpoint | planned |
-| `arc.upnp` | UPnP port-mapping payloads | planned |
+| `arc.chunk` | Plan a multi-segment download | **ready** |
+| `arc.torrent` | Read `.torrent` metadata | **ready** |
+| `arc.probe` | Probe and time a TCP endpoint | **ready** |
+| `arc.upnp` | UPnP port-mapping payloads | **ready** |
 
 **Porting note.** `vortex`'s transfer command was a simulation, not a
 downloader. It is declared here but should become real or be cut; it will not
@@ -165,10 +165,10 @@ gains an `--archives` flag.
 
 From `glyph` (gen 1).
 
-**Porting note.** `glyph.search` is not ported: it was a substring scan over a
-single file, which `sift.search` already does with line numbers, regex and glob
-filters. Keeping both would mean two implementations of one idea, one of them
-weaker. It is marked *superseded* rather than *planned*.
+**Note.** `glyph.search` has been **removed from the manifest**. It was a
+substring scan over a single file, which `sift.search` already does with line
+numbers, regex and glob filters. A manifest that lists an operation which will
+never exist is worse than one that does not: the count is now 87, not 88.
 
 | Operation | What it does | Status |
 |---|---|---|
@@ -178,7 +178,7 @@ weaker. It is marked *superseded* rather than *planned*.
 | `glyph.encoding` | Detect encoding and line endings | **ready** |
 | `glyph.readability` | Word count, reading time, readability | **ready** |
 | `glyph.metrics` | Code lines, comments, blanks | **ready** |
-| `glyph.search` | Search a document | superseded |
+| ~~`glyph.search`~~ | Search a document | removed — `sift.search` does it |
 
 ## scout — Filesystem
 
@@ -190,9 +190,9 @@ inventory and byte-diff.
 | `scout.catalog` | Catalogue to table, JSON, CSV, Markdown or HTML | **ready** |
 | `scout.duplicates` | Find byte-identical files by SHA-256 | **ready** |
 | `scout.clean` | Remove duplicates, preview first | **ready** |
-| `scout.treemap` | Space usage treemap | planned |
-| `scout.inventory` | Depth, capacity, largest files | planned |
-| `scout.diff` | Byte-by-byte comparison | planned |
+| `scout.treemap` | Space usage treemap | **ready** |
+| `scout.inventory` | Depth, capacity, largest files | **ready** |
+| `scout.diff` | Byte-by-byte comparison | **ready** |
 
 **Porting note.** Batch processing no longer swallows save errors. The original
 wrote `let _ = img.save(...)` and counted the file as processed regardless, so a
@@ -297,9 +297,9 @@ what it is.
 |---|---|
 | Original applications | 22 |
 | Modules | 13 |
-| Operations declared | 88 |
-| Operations ready | 57 |
-| Operations planned | 31 |
+| Operations declared | 87 |
+| Operations ready | 68 |
+| Operations planned | 19 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.
