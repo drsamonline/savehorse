@@ -1,0 +1,64 @@
+/* Design tokens.
+ *
+ * No utility framework, no component library, no webfont request. The whole
+ * interface is built from these variables, which is what keeps it looking like
+ * one product rather than a pile of defaults.
+ */
+
+:root {
+  /* Surfaces, darkest to lightest. Chrome stays neutral so content carries
+     the colour. */
+  --bg: #0b0d10;
+  --bg-sunken: #07080a;
+  --bg-raised: #12151a;
+  --bg-hover: #171b21;
+  --line: #1d222a;
+  --line-strong: #2a313c;
+
+  /* Ink */
+  --ink: #e9edf2;
+  --ink-dim: #98a2b0;
+  --ink-faint: #5d6875;
+
+  /* The single signal colour. Lime rather than the usual blue: it reads as an
+     instrument panel, not a dashboard. */
+  --signal: #d8ff4f;
+  --signal-dim: #a8c93a;
+  --signal-ink: #10130a;
+
+  /* Semantic */
+  --warn: #ffb340;
+  --danger: #ff5f56;
+  --ok: #4fd48a;
+
+  /* Type. System stacks only — no network request, works offline. */
+  --sans: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    Inter, system-ui, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", "JetBrains Mono", Menlo,
+    Consolas, monospace;
+
+  /* Geometry */
+  --rail: 56px;
+  --topbar: 48px;
+  --dock: 128px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  /* Per-module accent. Assigned from a fixed ramp so a module always has the
+     same colour, and the chrome never has to change. */
+  --module: var(--signal);
+}
+
+[data-module="aegis"] { --module: #ffb340; }
+[data-module="forge"] { --module: #ff7a5c; }
+[data-module="halo"] { --module: #b98bff; }
+[data-module="iris"] { --module: #ff6fa5; }
+[data-module="arc"] { --module: #5ac8fa; }
+[data-module="sift"] { --module: #d8ff4f; }
+[data-module="glyph"] { --module: #9ee6b4; }
+[data-module="scout"] { --module: #6fd6c4; }
+[data-module="morph"] { --module: #c9a7ff; }
+[data-module="pulse"] { --module: #ffd166; }
+[data-module="pager"] { --module: #7aa7ff; }
+[data-module="revive"] { --module: #7de08a; }
+[data-module="flux"] { --module: #ff9f68; }

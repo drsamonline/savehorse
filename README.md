@@ -19,7 +19,7 @@ Early. This is the spine, not the finished product.
 | Modules | 13 |
 | Operations declared | 88 |
 | Operations ported | 7 — `sift` ×4, `scout` ×3 |
-| GUI | planned (Tauri 2 + React) |
+| GUI | Tauri 2 + React shell, 7 operations wired |
 | Platforms | Windows, macOS, Linux |
 
 Every operation is declared in the manifest whether or not it is ported yet, and
@@ -38,6 +38,24 @@ cargo run -- sift --help
 ```
 
 Requires a stable Rust toolchain.
+
+### The desktop app
+
+```sh
+cd apps/savehorse-desktop
+npm install
+npm run tauri dev      # the window, wired to the Rust core
+npm run build          # type-check and build the interface on its own
+```
+
+The interface is a custom design system — tokens in
+`src/styles/tokens.css`, layout in `src/styles/app.css`, no utility framework
+and no webfont request, so it works offline like everything else here.
+
+Inside the window, the operation list and every form come from the Rust
+manifest over the bridge. Run the same code in a plain browser with
+`npm run dev` and it says so: the module rail appears, the operations do not,
+because there is no core to ask.
 
 ## Use
 
@@ -111,12 +129,15 @@ crates/savehorse-core        errors, sizes, hashing, walking, path safety
 crates/savehorse-registry    the operation manifest — declared once, read by all
 crates/savehorse-sift        text and search
 crates/savehorse-scout       filesystem catalogue and deduplication
+crates/savehorse-runner      one implementation of every ported operation
 apps/savehorse-cli           the `savehorse` binary
+apps/savehorse-desktop       the Tauri window (React + TypeScript)
 ```
 
 Each module crate holds logic only. It returns data or an error and never
-prints, which is what lets one implementation serve the CLI today and the
-desktop app later.
+prints. `savehorse-runner` turns a request into an outcome, and both the CLI
+and the desktop app call it — so a behaviour change lands in both at once and
+they cannot drift apart.
 
 ## Licence
 

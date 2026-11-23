@@ -73,6 +73,8 @@ pub struct Param {
     pub positional: bool,
     pub required: bool,
     pub help: &'static str,
+    /// Allowed words for a `Choice` parameter. Empty for every other kind.
+    pub options: &'static [&'static str],
 }
 
 /// One operation.
@@ -108,6 +110,7 @@ const P_PATH: Param = Param {
     positional: true,
     required: true,
     help: "File or directory to work on",
+    options: &[],
 };
 
 const P_PATHS: Param = Param {
@@ -116,6 +119,7 @@ const P_PATHS: Param = Param {
     positional: true,
     required: true,
     help: "One or more files or directories",
+    options: &[],
 };
 
 const P_PATTERN: Param = Param {
@@ -124,6 +128,7 @@ const P_PATTERN: Param = Param {
     positional: true,
     required: true,
     help: "Text or regular expression to match",
+    options: &[],
 };
 
 const P_MIN_SIZE: Param = Param {
@@ -132,6 +137,7 @@ const P_MIN_SIZE: Param = Param {
     positional: false,
     required: false,
     help: "Skip anything smaller, e.g. 10k",
+    options: &[],
 };
 
 const P_MAX_SIZE: Param = Param {
@@ -140,6 +146,7 @@ const P_MAX_SIZE: Param = Param {
     positional: false,
     required: false,
     help: "Skip anything larger, e.g. 2m",
+    options: &[],
 };
 
 const P_EXT: Param = Param {
@@ -148,6 +155,7 @@ const P_EXT: Param = Param {
     positional: false,
     required: false,
     help: "Only this extension, e.g. txt",
+    options: &[],
 };
 
 const P_DEPTH: Param = Param {
@@ -156,6 +164,7 @@ const P_DEPTH: Param = Param {
     positional: false,
     required: false,
     help: "Maximum directory depth",
+    options: &[],
 };
 
 const P_GLOB: Param = Param {
@@ -164,6 +173,7 @@ const P_GLOB: Param = Param {
     positional: false,
     required: false,
     help: "Only files whose name matches, e.g. *.rs",
+    options: &[],
 };
 
 const P_IGNORE_CASE: Param = Param {
@@ -172,6 +182,7 @@ const P_IGNORE_CASE: Param = Param {
     positional: false,
     required: false,
     help: "Match without regard to case",
+    options: &[],
 };
 
 // ---------------------------------------------------------------------------
@@ -186,6 +197,7 @@ const SIFT_STRINGS: &[Param] = &[
         positional: false,
         required: false,
         help: "Shortest run of characters to report (default 4)",
+        options: &[],
     },
     Param {
         name: "ascii",
@@ -193,6 +205,7 @@ const SIFT_STRINGS: &[Param] = &[
         positional: false,
         required: false,
         help: "ASCII only, skip the UTF-16 pass",
+        options: &[],
     },
     Param {
         name: "unicode",
@@ -200,6 +213,7 @@ const SIFT_STRINGS: &[Param] = &[
         positional: false,
         required: false,
         help: "UTF-16 only, skip the ASCII pass",
+        options: &[],
     },
 ];
 
@@ -212,6 +226,7 @@ const SIFT_SEARCH: &[Param] = &[
         positional: false,
         required: false,
         help: "Treat the pattern as a regular expression",
+        options: &[],
     },
     P_IGNORE_CASE,
     P_GLOB,
@@ -225,6 +240,7 @@ const SIFT_REPLACE: &[Param] = &[
         positional: true,
         required: true,
         help: "Text to substitute in place of each match",
+        options: &[],
     },
     P_PATHS,
     P_IGNORE_CASE,
@@ -234,6 +250,7 @@ const SIFT_REPLACE: &[Param] = &[
         positional: false,
         required: false,
         help: "Write a .bak copy before changing a file",
+        options: &[],
     },
     P_GLOB,
 ];
@@ -247,6 +264,7 @@ const SIFT_XOR: &[Param] = &[
         positional: false,
         required: false,
         help: "Only try XOR keys up to this value (default 255)",
+        options: &[],
     },
 ];
 
@@ -261,7 +279,8 @@ const SCOUT_CATALOG: &[Param] = &[
         kind: ParamKind::Choice,
         positional: false,
         required: false,
-        help: "table | json | csv | markdown | html",
+        help: "How to render the report",
+        options: &["table", "json", "csv", "markdown", "html"],
     },
     Param {
         name: "out",
@@ -269,6 +288,7 @@ const SCOUT_CATALOG: &[Param] = &[
         positional: false,
         required: false,
         help: "Write the report here instead of stdout",
+        options: &[],
     },
     P_MIN_SIZE,
     P_MAX_SIZE,
@@ -286,6 +306,7 @@ const SCOUT_CLEAN: &[Param] = &[
         positional: false,
         required: false,
         help: "Actually delete; without it this is a preview",
+        options: &[],
     },
     P_MIN_SIZE,
     P_EXT,

@@ -44,7 +44,8 @@ the first new module.
 ## 0003 — Tauri 2 with a React front end
 
 **Decision.** The desktop app is Tauri 2 (Rust backend) with React, TypeScript
-and Vite in the webview.
+and Vite in the webview. The interface is built on a hand-written token layer
+and plain CSS — no Tailwind, no component library.
 
 **Why.** The domain logic is already Rust, so Tauri reuses it as library crates
 with no rewrite. Installers land around 6 MB rather than the 120 MB an Electron
@@ -55,6 +56,12 @@ build and iterate.
 **Rejected.** `egui` and `iced` — pure Rust and single-binary, but constrained
 styling, and the brief calls for an interface that does not look like every
 other Rust tool. Electron — no Rust reuse, large installers.
+
+**On Tailwind.** The plan named it; the build does not use it. A utility
+framework earns its keep on a large, changing surface, and this is one window
+with a fixed vocabulary of a dozen components. Plain CSS with tokens is fewer
+moving parts, produces 11 kB of stylesheet instead of a framework runtime, and
+keeps the design decisions in one readable file.
 
 **Cost accepted.** A webview dependency, and `webkit2gtk-4.1` on Linux. If a
 single dependency-free binary ever matters more than the interface, `egui` is
@@ -119,3 +126,19 @@ side effect of a refactor.
 the application or building a paid tier on it. If either is ever intended, this
 must change to MIT or Apache-2.0 **before** the first public release, because
 permission already granted cannot be withdrawn.
+
+---
+
+## 0008 — One runner, two front ends
+
+**Decision.** The dispatch that turns a request into an outcome lives in
+`savehorse-runner`, not in the CLI and not in the desktop shell.
+
+**Why.** The first draft put it in the CLI, which would have meant copying it
+into the window — two implementations of seven operations, diverging from the
+first bug fix. Extracting it cost one refactor and means the GUI cannot quietly
+behave differently from the command line.
+
+**Consequence.** Neither front end owns any logic. The CLI parses arguments and
+prints; the window collects form values and displays. Adding an operation means
+one arm in the runner, and both get it.

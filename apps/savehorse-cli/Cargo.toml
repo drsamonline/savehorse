@@ -15,7 +15,6 @@ path = "src/main.rs"
 [dependencies]
 savehorse-core.workspace = true
 savehorse-registry.workspace = true
-savehorse-sift.workspace = true
-savehorse-scout.workspace = true
+savehorse-runner.workspace = true
 serde.workspace = true
 serde_json.workspace = true

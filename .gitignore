@@ -1,5 +1,11 @@
 /target
+**/target
 **/*.rs.bk
 *.pdb
 .DS_Store
 /smoke
+
+# desktop app
+node_modules/
+dist/
+src-tauri/gen/
