@@ -12,6 +12,11 @@ authors.workspace = true
 name = "savehorse"
 path = "src/main.rs"
 
+# Windows only: compiles the icon and version block into the .exe. Gated so
+# the crate is not built on the other two platforms.
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
 [dependencies]
 savehorse-core.workspace = true
 savehorse-registry.workspace = true

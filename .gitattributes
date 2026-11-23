@@ -1,0 +1,20 @@
+# Normalise line endings in the repository, keep them as they are on checkout.
+* text=auto eol=lf
+
+# Windows tooling expects CRLF in these.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary: never touched, never diffed.
+*.png binary
+*.ico binary
+*.icns binary
+*.iso binary
+*.vault binary
+*.7z binary
+*.msi binary
+
+# Generated demo bundle: it is a build output, so keep it out of diffs and
+# language statistics.
+demo/** linguist-generated=true
+demo/assets/** linguist-vendored=true

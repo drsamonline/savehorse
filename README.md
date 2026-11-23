@@ -1,22 +1,20 @@
 <div align="center">
 
-<img src="apps/savehorse-desktop/src-tauri/icons/icon.png" width="88" alt="savehorse">
+<img src="apps/savehorse-desktop/src-tauri/icons/icon.png" width="84" alt="savehorse">
 
 # savehorse
 
 **One bench, thirteen tools.**
-
-A Rust workspace that folds twenty-two small Windows utilities into thirteen
-modules behind one command line and one desktop app.
 
 [![CI](https://github.com/drsamonline/savehorse/actions/workflows/ci.yml/badge.svg)](https://github.com/drsamonline/savehorse/actions/workflows/ci.yml)
 [![Desktop](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml/badge.svg)](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml)
 ![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platforms-windows%20%7C%20macos%20%7C%20linux-4b5563)
 ![Operations](https://img.shields.io/badge/operations-73%20of%2087-d8ff4f)
-![Tests](https://img.shields.io/badge/tests-159%20passing-4fd48a)
+![Tests](https://img.shields.io/badge/tests-153%20passing-4fd48a)
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20NC%201.0.0-ffb340)](LICENSE)
 
+[**User guide**](USER_GUIDE.md) ·
 [**Landing page**](https://drsamonline.github.io/savehorse/) ·
 [**Interface demo**](https://drsamonline.github.io/savehorse/demo/) ·
 [Plan](PLAN.md) ·
@@ -26,32 +24,37 @@ modules behind one command line and one desktop app.
 
 <img src="assets/ui.png" alt="The savehorse desktop interface: a module rail, a generated operation form, a result pane and a job dock">
 
-<div align="center"><sub>The real interface, running against the real operation manifest — <a href="https://drsamonline.github.io/savehorse/demo/">try it in the browser</a>.</sub></div>
+I had twenty-two small Windows utilities. They shared one architecture and about
+fifteen thousand lines of window code between them, and every time I fixed a bug
+I fixed it twice or forgot to. This is those twenty-two folded into thirteen
+modules behind one command line and one desktop app.
 
----
+The name comes from the shave horse: the bench a chairmaker sits on, which holds
+the work with a foot pedal so both hands stay free for the tool.
 
-## What it is
+## Who it's for
 
-The name comes from the shave horse: the bench a chairmaker sits on, which
-clamps the work with a foot pedal so both hands stay free for the tool. One
-bench, thirteen tools, each keeping the name it had on its own.
+| If you are | Start with | Because |
+|---|---|---|
+| Anyone who has lost files | `revive` | Carves images, PDFs and ZIPs back out of a disk image or a corrupted file |
+| A photographer or designer | `iris` | Batch converts a folder, makes contact sheets, builds `.ico` files |
+| A developer in a codebase | `sift` | Regex search across a tree, replace with a preview first |
+| Reading or writing documents | `glyph` | PDF in and out, Markdown rendering, readability |
+| A sysadmin or support tech | `pulse`, `halo` | Hash a file, audit temp storage, build or verify an ISO |
+| Cleaning a full disk | `scout` | What is taking the space, and which files are byte-identical |
+| Handling private files | `aegis` | Encrypt, shred, audit autostart entries |
+| Forensics, or learning security | `forge`, `sift` | PE headers, hex, byte patching, XOR recovery |
+| Just want files organised | `morph`, `arc` | Rename a batch with an undo journal, pack or split archives |
+| A musician or audio tinkerer | `flux` | WAV and ID3 metadata, test tones, gain |
 
-The portfolio this replaces was twenty-two applications — `aegis`, `vault`,
-`sift`, `slate`, `halo`, `optic` and the rest — that shared one architecture and
-15,000 lines of duplicated Win32 window code. The logic was worth keeping. The
-GUI layer was not.
+The [user guide](USER_GUIDE.md) has a longer version of that table, five worked
+examples, and a reference for every operation.
 
-Three rules hold the project together:
+## Where it is
 
-| | |
-|---|---|
-| **One manifest** | Every operation is declared once, in `savehorse-registry`. The CLI's parser and help, the app's forms, and the numbers on this page all read from it. A test asserts the count, so the documentation cannot drift from the code. |
-| **One runner** | The command line and the window call the same implementation. Neither owns logic, so a fix lands in both at once. |
-| **Nothing pretends** | An operation declared but not yet ported refuses by name. Destructive operations preview before they write. Where an original was a simulation, it says so. |
-
-## Status
-
-A migration in progress, not a finished product.
+73 of 87 operations are ported and tested. The fourteen that are not are all in
+`pulse` (five, needing a cross-platform system API) and `pager` (nine, needing
+window APIs). Ten of the thirteen modules are complete.
 
 | | |
 |---|---|
@@ -62,86 +65,47 @@ A migration in progress, not a finished product.
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
-Ported so far: `sift` 9/9, `forge` 6/6, `revive` 7/7, `morph` 2/2, `glyph` 6/6,
-`iris` 8/8, `arc` 10/10, `halo` 7/7, `scout` 6/6, `aegis` 6/6, `pulse` 2/7, `flux` 4/4.
-Still to come: the rest of `pulse` (5) and `pager` (9), the two modules that
-need cross-platform system and window APIs.
+Every operation is declared in the manifest whether or not it is ported, and an
+unported one refuses by name instead of failing somewhere deeper. `savehorse ops`
+is the authoritative list, generated from the same manifest the program runs on.
 
-## Quick start
+## Install
+
+Download an installer from [releases](https://github.com/drsamonline/savehorse/releases),
+or build it:
 
 ```sh
 git clone https://github.com/drsamonline/savehorse
 cd savehorse
-
-cargo build --workspace
-cargo test --workspace
-cargo run -- --help
+cargo build --release -p savehorse-cli     # the command line
 ```
 
-### The desktop app
+The desktop app:
 
 ```sh
 cd apps/savehorse-desktop
 npm install
-npm run tauri dev      # the window, wired to the Rust core
-npm run build          # type-check and build the interface alone
+npm run tauri dev
 ```
 
-The interface is a custom design system — tokens in
-`apps/savehorse-desktop/src/styles/tokens.css` — with no utility framework and
-no webfont request, so it works offline like everything else here.
-
-## Use
+## A few commands
 
 ```
-savehorse <module> <op> [arguments] [flags]
-
-savehorse modules                 list the thirteen modules
-savehorse ops [module]            list operations and their status
-savehorse <module> --help         what one module can do
+savehorse <module> <operation> [arguments] [flags]
 ```
 
 ```sh
-# find a string across a tree, as a literal or a regex
 savehorse sift search "TODO" ./src --regex
-
-# replace across files — preview first, then apply
 savehorse sift replace old_name new_name ./src --dry-run
-savehorse sift replace old_name new_name ./src --backup
-
-# catalogue a folder, then reclaim the duplicates
-savehorse scout catalog ~/Pictures --format markdown --out catalog.md
 savehorse scout duplicates ~/Downloads
-savehorse scout clean ~/Downloads --commit
-
-# build an ISO, verify it, then snapshot it
+savehorse aegis encrypt notes.txt --out notes.vault --passphrase
 savehorse halo create ./disc --out disc.iso --volume-id BACKUP
-savehorse halo verify disc.iso
-savehorse revive pack ./disc --out disc.chronos
-
-# carve files out of a blob, and read a PE header
-savehorse revive carve disk.img --out recovered
-savehorse forge inspect app.exe
-
-# rename a batch, with an undo journal
 savehorse morph rename ./photos --case title --number --journal undo.json
-savehorse morph undo undo.json
 ```
 
-### Flags
-
-| Flag | Meaning |
-|---|---|
-| `--json` | machine-readable output on stdout |
-| `--dry-run` | preview a destructive operation, change nothing |
-| `--commit` | apply a destructive operation |
-| `--backup` | keep a `.bak` copy before rewriting a file |
-| `--regex` | treat the pattern as a regular expression |
-| `--ignore-case` | case-insensitive matching |
-| `--glob` | restrict to matching file names, e.g. `*.rs` |
-
-Flags take a value as `--key value` or `--key=value`. Switches are read from the
-manifest, so a new operation's booleans work without touching the CLI.
+Flags take a value as `--out file` or `--out=file`. Switches stand alone, like
+`--dry-run`. Anything that rewrites or destroys data previews when you ask it
+to; the user guide lists which, and what each preview shows.
 
 ## The modules
 
@@ -161,38 +125,45 @@ manifest, so a new operation's booleans work without touching the CLI.
 | `revive` | Carve, recover and verify snapshots | revive + chronos | 7 / 7 |
 | `flux` | Inspect, tag and shape audio | flux | 4 / 4 |
 
-## Layout
+## How it holds together
+
+Three things do most of the work.
+
+**One manifest.** Every operation is declared once, in `savehorse-registry`, with
+its parameters, danger level and status. The CLI's argument parser and help, the
+app's forms, and the counts in this README all read from it. A test asserts the
+count, so the documentation cannot quietly go stale.
+
+**One runner.** The command line and the window call the same code. Neither owns
+logic, so a fix lands in both at once.
+
+**Nothing pretends.** Unported operations refuse by name. Destructive ones
+preview before they write. Where an original turned out to be a simulation, the
+summary says so.
 
 ```
 crates/savehorse-core        errors, sizes, hashing, walking, path safety
-crates/savehorse-registry    the operation manifest — declared once, read by all
+crates/savehorse-registry    the operation manifest
 crates/savehorse-runner      one implementation of every ported operation
-crates/savehorse-sift        text, search and the slate-derived text ops
-crates/savehorse-scout       filesystem catalogue and deduplication
-crates/savehorse-glyph       PDF, Markdown, measurements
-crates/savehorse-halo        ISO 9660 authoring and reading
-crates/savehorse-iris        images
-crates/savehorse-arc         zip archives and volume splitting
-crates/savehorse-revive      signature carving and snapshot containers
-crates/savehorse-forge       PE headers, hex and patching
-crates/savehorse-morph       batch rename with an undo journal
+crates/savehorse-<module>    thirteen module crates, logic only, no printing
 apps/savehorse-cli           the `savehorse` binary
 apps/savehorse-desktop       the Tauri window (React + TypeScript)
-index.html, demo/, assets/   landing page, interface demo, screenshots
-docs/                        capability matrix and decision records
 ```
 
-Module crates hold logic only. They return data or an error and never print,
-which is what lets one implementation serve both front ends.
+Module crates return data or an error and never print. That is what lets one
+implementation serve both front ends.
 
 ## Documentation
 
-- [PLAN.md](PLAN.md) — the consolidation plan: what the 22 applications were,
-  how they map onto 13 modules, and the phased migration.
+- [USER_GUIDE.md](USER_GUIDE.md) — how to use it: audiences, worked examples,
+  every operation, and what previews.
+- [PLAN.md](PLAN.md) — the consolidation plan: what the 22 applications were, how
+  they map onto 13 modules, and the phased migration.
 - [docs/CAPABILITY-MATRIX.md](docs/CAPABILITY-MATRIX.md) — every operation, its
   status, and the defects fixed rather than carried forward.
 - [docs/decisions](docs/decisions/0001-decisions.md) — the choices that are
-  expensive to reverse, with what was rejected and why.
+  expensive to reverse, with what was rejected.
+- [CHANGELOG.md](CHANGELOG.md) — what changed and when.
 
 <!-- support:sweep -->
 ## Support
@@ -209,6 +180,6 @@ which is what lets one implementation serve both front ends.
 
 ## Licence
 
-[PolyForm Noncommercial 1.0.0](LICENSE). Noncommercial use only — if that ever
-needs to change, it has to change before the first public release, because
-permission already granted cannot be withdrawn.
+[PolyForm Noncommercial 1.0.0](LICENSE). Noncommercial use only. If that ever
+needs to change it has to change before the first public release, because
+permission already granted cannot be taken back.

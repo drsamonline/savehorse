@@ -1,0 +1,161 @@
+name: Release
+
+# Only a tag publishes. Nothing here runs on a branch push, so a red build can
+# never produce an artifact.
+#
+# workflow_dispatch is a dry run: it builds every platform, prints what would be
+# uploaded, and stops without creating a release.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and package, but do not publish"
+        type: boolean
+        default: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Nothing is published until the tag agrees with the crate version.
+  verify:
+    name: Verify the tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag matches the workspace version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          crate="$(python3 -c 'import tomllib;print(tomllib.load(open("Cargo.toml","rb"))["workspace"]["package"]["version"])')"
+          echo "tag=$tag crate=$crate"
+          test "$tag" = "$crate" || {
+            echo "::error::tag $tag does not match Cargo.toml $crate"
+            exit 1
+          }
+
+  build:
+    name: ${{ matrix.os }}
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cli: savehorse-linux-x86_64
+          - os: macos-latest
+            cli: savehorse-macos-arm64
+          - os: windows-latest
+            cli: savehorse-windows-x86_64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/savehorse-desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Linux bundling dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf \
+            libgtk-3-dev
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.os }}-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ matrix.os }}-release-
+
+      # The CLI is a separate artifact: people who only want the command line
+      # should not have to download an installer.
+      - name: Build the CLI
+        run: |
+          mkdir -p dist
+          cargo build --release -p savehorse-cli
+          python3 - <<'PY'
+          import os, shutil, sys
+          name = os.environ["CLI_NAME"]
+          src = os.path.join("target", "release", "savehorse.exe" if name.endswith(".exe") else "savehorse")
+          shutil.copyfile(src, os.path.join("dist", name))
+          print("packaged", name, os.path.getsize(os.path.join("dist", name)), "bytes")
+          PY
+        env:
+          CLI_NAME: ${{ matrix.cli }}
+        shell: bash
+
+      - name: Build the app and its installers
+        run: |
+          npm --prefix apps/savehorse-desktop ci
+          npm --prefix apps/savehorse-desktop run build
+          cd apps/savehorse-desktop && npx tauri build --verbose
+
+      - name: Collect the installers
+        shell: bash
+        run: |
+          mkdir -p dist
+          find apps/savehorse-desktop/src-tauri/target -maxdepth 4 -type f \
+            \( -name "*.msi" -o -name "*.exe" -o -name "*.dmg" -o -name "*.deb" \
+               -o -name "*.AppImage" -o -name "*.rpm" -o -name "*.tar.gz" \) \
+            -not -path "*/debug/*" -exec cp {} dist/ \;
+          ls -la dist/
+
+      - name: Checksums
+        shell: bash
+        run: |
+          cd dist
+          if command -v sha256sum >/dev/null; then sha256sum * > SHA256SUMS.txt;
+          else shasum -a 256 * > SHA256SUMS.txt; fi
+          cat SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.cli }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # gh is preinstalled on every runner, so the release is created with the
+      # CLI rather than with a third-party action whose SHA would need pinning.
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls -la artifacts
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "savehorse ${GITHUB_REF_NAME}" \
+            --notes-file CHANGELOG.md \
+            --draft \
+            artifacts/*
