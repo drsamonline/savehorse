@@ -7,6 +7,21 @@ Source archives: `releases.7z` (generation 1, eleven apps) and `releases.7z.001`
 folded into thirteen modules.
 
 
+
+## Guards
+
+Five checks exist because each one has already caught a real mistake. Every one
+of them has been tested to fire — a guard that has never failed is a guard
+nobody knows works.
+
+| Guard | Catches | Where |
+|---|---|---|
+| Stale crate names | `shavehorse_*` instead of `savehorse_*`, which reads as a missing crate | `ci.yml` |
+| Manifest count | A status flipped without the count, or the reverse | `cargo test` |
+| Documented commands | A `savehorse ...` example that the argument parser rejects | `scripts/check_docs.py` |
+| Demo staleness | `demo/` committed without being rebuilt after an app change | `desktop.yml` |
+| Release version | A tag that disagrees with the version in `Cargo.toml` | `release.yml` |
+
 ## How this is verified
 
 "Ready" means ported and reachable. What actually proves it varies, and it is
