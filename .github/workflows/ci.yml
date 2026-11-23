@@ -64,7 +64,16 @@ jobs:
             echo "captured outputs match"
           else
             echo "::warning::scripts/demo-captured.json differs from a fresh capture"
+            cp /tmp/captured.json captured-diff.json
           fi
+
+      - name: Keep the fresh capture for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-captured-fresh
+          path: captured-diff.json
+          if-no-files-found: ignore
 
       - name: Smoke test the CLI
         shell: bash

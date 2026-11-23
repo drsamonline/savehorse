@@ -47,7 +47,12 @@ printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwA
 printf 'first line\nsecond line\n' > smoke/text.txt
 "$bin" halo create smoke/iso --out smoke/test.iso --volume-id SMOKE >/dev/null
 "$bin" glyph pdf smoke/text.txt --out smoke/text.pdf --title "Smoke Test" >/dev/null
-printf 'dummy payload for carving\n' > smoke/blob.bin
+# A PNG buried in a blob, so revive has something to find.
+{ printf 'header junk before the image\n'; cat smoke/px.png; printf 'trailing junk\n'; } > smoke/blob.bin
+# Two files for the rename preview.
+mkdir -p smoke/ren
+printf 'one\n' > smoke/ren/one.txt
+printf 'two\n' > smoke/ren/two.txt
 
 python3 - "$bin" "$out" <<'PY'
 import json, subprocess, sys
@@ -67,14 +72,14 @@ COMMANDS = {
     "glyph.extract":     ["glyph", "extract", "smoke/text.pdf"],
     "glyph.readability": ["glyph", "readability", "smoke/text.txt"],
     "halo.list":         ["halo", "list", "smoke/test.iso"],
-    "halo.create":       ["halo", "create", "smoke/iso", "--out", "smoke/again.iso", "--volume-id", "SMOKE"],
+    "halo.create":       ["halo", "create", "smoke/iso", "--out", "smoke/demo.iso", "--volume-id", "SMOKE"],
     "iris.info":         ["iris", "info", "smoke/px.png"],
     "iris.stats":        ["iris", "stats", "smoke/px.png"],
     "arc.list":          ["arc", "list", "smoke/tree.zip"],
     "forge.hexdump":     ["forge", "hexdump", "smoke/px.png", "--length", "32"],
     "forge.search":      ["forge", "search", "smoke/px.png", "--hex", "89504E47"],
     "revive.scan":       ["revive", "scan", "smoke/blob.bin"],
-    "morph.rename":      ["morph", "rename", "smoke/a.txt", "--case", "upper", "--dry-run"],
+    "morph.rename":      ["morph", "rename", "smoke/ren", "--case", "upper", "--dry-run"],
 }
 
 subprocess.run([binary, "arc", "create", "smoke/iso", "--out", "smoke/tree.zip"],
@@ -87,7 +92,7 @@ for key, args in COMMANDS.items():
         sys.exit("{} failed: {}".format(key, result.stderr.strip()))
     captured[key] = result.stdout.rstrip("\n")
 
-json.dump(captured, open(out, "w"), indent=2, sort_keys=True)
+json.dump(captured, open(out, "w"), indent=2)
 open(out, "a").write("\n")
 print("captured", len(captured), "outputs to", out)
 PY
