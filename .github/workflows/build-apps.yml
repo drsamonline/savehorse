@@ -22,6 +22,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  actions: write   # the `shot` job in app-builder's build.yml dispatches a run
 
 concurrency:
   group: build
