@@ -64,6 +64,19 @@ impl Request {
             .ok_or_else(|| Error::Invalid(format!("{} is required", what)))
     }
 
+    /// A fractional flag: frequencies, seconds, gains and volumes are not
+    /// whole numbers.
+    fn float(&self, name: &str) -> Result<Option<f64>> {
+        match self.flags.get(name) {
+            None => Ok(None),
+            Some(raw) => raw
+                .trim()
+                .parse::<f64>()
+                .map(Some)
+                .map_err(|_| Error::Invalid(format!("--{} wants a number, got '{}'", name, raw))),
+        }
+    }
+
     fn number(&self, name: &str) -> Result<Option<usize>> {
         match self.value(name) {
             None => Ok(None),
@@ -1749,11 +1762,11 @@ fn flux_inspect(req: &Request) -> Result<Outcome> {
 
 fn flux_synth(req: &Request) -> Result<Outcome> {
     let out = PathBuf::from(required_value(req, "out")?);
-    let frequency = req.number("frequency")?.map(|v| v as f64).unwrap_or(440.0);
-    let seconds = req.number("seconds")?.map(|v| v as f64).unwrap_or(1.0);
+    let frequency = req.float("frequency")?.unwrap_or(440.0);
+    let seconds = req.float("seconds")?.unwrap_or(1.0);
     let rate = req.number("rate")?.unwrap_or(44100) as u32;
     let channels = req.number("channels")?.unwrap_or(1) as u16;
-    let volume = req.number("volume")?.map(|v| v as f64).unwrap_or(0.5);
+    let volume = req.float("volume")?.unwrap_or(0.5);
 
     let r = savehorse_flux::synthesize(&out, frequency, seconds, rate, channels, volume)?;
 
@@ -1800,8 +1813,7 @@ fn flux_gain(req: &Request) -> Result<Outcome> {
     let source = PathBuf::from(req.position(0, "path")?);
     let out = PathBuf::from(required_value(req, "out")?);
     let gain = req
-        .number("gain")?
-        .map(|v| v as f64)
+        .float("gain")?
         .ok_or_else(|| Error::Invalid("--gain is required, e.g. 1.5".to_string()))?;
 
     let r = savehorse_flux::apply_gain(&source, &out, gain)?;
