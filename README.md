@@ -194,6 +194,19 @@ which is what lets one implementation serve both front ends.
 - [docs/decisions](docs/decisions/0001-decisions.md) — the choices that are
   expensive to reverse, with what was rejected and why.
 
+<!-- support:sweep -->
+## Support
+
+| | |
+|---|---|
+| UPI (India) | `drsohilboi@ybl` — payee Dr Sohil Momin, open amount, or scan [the QR](docs/assets/upi-qr.svg) |
+| GitHub Sponsors | [github.com/sponsors/drsamonline](https://github.com/sponsors/drsamonline) |
+| Ko-fi | [ko-fi.com/matneo](https://ko-fi.com/matneo) |
+| PayPal | [paypal.me/drsohilmomin](https://paypal.me/drsohilmomin?locale.x=en_GB&country.x=IN) |
+| My books | [Amazon author store](https://www.amazon.com/stores/author/B08ZT331LY/allbooks?ccs_id=aed72b9f-71d9-41dc-adee-e9368a317acc) |
+| More apps | [drsamonline.github.io](https://drsamonline.github.io/) |
+| Email | [sohilmomin2000@gmail.com](mailto:sohilmomin2000@gmail.com) |
+
 ## Licence
 
 [PolyForm Noncommercial 1.0.0](LICENSE). Noncommercial use only — if that ever

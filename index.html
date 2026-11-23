@@ -144,6 +144,25 @@
   th { color: var(--ink-faint); font-weight: 560; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
   td.num { font-family: var(--mono); color: var(--signal); }
 
+  /* ---------- support ---------- */
+  .support { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .support .card { display: flex; flex-direction: column; gap: 6px; }
+  .support .card.wide { grid-column: span 2; }
+  .support .card .label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--ink-faint); font-weight: 560;
+  }
+  .support .card a, .support .card span.value {
+    font-family: var(--mono); font-size: 14px; color: var(--ink);
+    text-decoration: none; word-break: break-word;
+  }
+  .support .card a:hover { color: var(--signal); }
+  .support .qr { display: flex; align-items: center; gap: 14px; }
+  .support .qr img {
+    width: 96px; height: 96px; border-radius: 8px; background: #fff; padding: 6px; flex: none;
+  }
+  .support-note { margin-top: 22px; font-size: 13.5px; color: var(--ink-faint); }
+
   footer {
     border-top: 1px solid var(--line); padding: 34px 0 60px;
     color: var(--ink-faint); font-size: 13.5px;
@@ -167,6 +186,7 @@
       <a href="#modules">Modules</a>
       <a href="#cli">Command line</a>
       <a href="#status">Status</a>
+      <a href="#support">Support</a>
       <a href="demo/">Interface demo</a>
       <a href="https://github.com/drsamonline/savehorse">GitHub</a>
     </nav>
@@ -283,11 +303,58 @@
       <tr><td>Desktop app</td><td class="num">Tauri 2 + React</td></tr>
     </table>
     <p class="sub" style="margin-top:26px">
-      Still to come: <span class="mono">aegis</span> (6), <span class="mono">pulse</span> (7) and
-      <span class="mono">pager</span> (9) need per-platform system and window APIs, and
-      <span class="mono">flux</span> (4) plus the remainder of <span class="mono">scout</span>,
-      <span class="mono">arc</span>, <span class="mono">halo</span>, <span class="mono">iris</span>
-      and <span class="mono">glyph</span> make up the rest.
+      Ten of thirteen modules are complete. Still to come:
+      <span class="mono">pulse</span> (5) and <span class="mono">pager</span> (9) — the two that
+      need cross-platform system and window APIs, which is why they are last.
+    </p>
+  </div>
+</section>
+
+
+<section id="support">
+  <div class="wrap">
+    <h2>Support</h2>
+    <p class="sub">
+      savehorse is free for personal, academic, hobby and non-profit use. If it
+      saved you a week, the usual shapes are below — and the first one costs
+      nothing.
+    </p>
+    <div class="support">
+      <div class="card wide">
+        <span class="label">UPI (India)</span>
+        <div class="qr">
+          <img src="docs/assets/upi-qr.svg" alt="UPI QR code for drsohilboi@ybl" width="96" height="96">
+          <span class="value">drsohilboi@ybl<br><span style="color:var(--ink-faint);font-size:12.5px">Dr Sohil Momin<br>open amount</span></span>
+        </div>
+      </div>
+      <div class="card">
+        <span class="label">GitHub Sponsors</span>
+        <a href="https://github.com/sponsors/drsamonline">github.com/sponsors/drsamonline</a>
+      </div>
+      <div class="card">
+        <span class="label">Ko-fi</span>
+        <a href="https://ko-fi.com/matneo">ko-fi.com/matneo</a>
+      </div>
+      <div class="card">
+        <span class="label">PayPal</span>
+        <a href="https://paypal.me/drsohilmomin?locale.x=en_GB&amp;country.x=IN">paypal.me/drsohilmomin</a>
+      </div>
+      <div class="card">
+        <span class="label">My books</span>
+        <a href="https://www.amazon.com/stores/author/B08ZT331LY/allbooks?ccs_id=aed72b9f-71d9-41dc-adee-e9368a317acc">Amazon author store</a>
+      </div>
+      <div class="card">
+        <span class="label">More apps</span>
+        <a href="https://drsamonline.github.io/">drsamonline.github.io</a>
+      </div>
+      <div class="card">
+        <span class="label">Email</span>
+        <a href="mailto:sohilmomin2000@gmail.com">sohilmomin2000@gmail.com</a>
+      </div>
+    </div>
+    <p class="support-note">
+      Sponsorship pays for the time, not for features: nothing here becomes
+      paid-only, and the source stays under the same licence either way.
     </p>
   </div>
 </section>
