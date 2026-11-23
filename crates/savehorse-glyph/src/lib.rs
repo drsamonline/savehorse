@@ -477,7 +477,10 @@ pub fn analyze_word_count(text: &str) -> WordCountReport {
         total_characters,
         total_sentences: sentences.max(1),
         average_word_length,
-        estimated_reading_time_mins: ((total_words as f64 / 200.0) * 10.0).round() / 10.0,
+        // Two decimals, not one: rounding a short document to one decimal
+        // reports 0.0 minutes, which reads as "no time at all" rather than
+        // "a few seconds".
+        estimated_reading_time_mins: ((total_words as f64 / 200.0) * 100.0).round() / 100.0,
     }
 }
 
