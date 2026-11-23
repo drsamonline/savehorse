@@ -1239,8 +1239,10 @@ mod tests {
     fn implemented_operations_declare_their_parameters() {
         for o in OPS.iter().filter(|o| o.status == Status::Implemented) {
             assert!(!o.params.is_empty(), "{} is implemented but declares no parameters", o.id);
-            let positional = o.params.iter().filter(|p| p.positional).count();
-            assert!(positional >= 1, "{} needs at least one positional parameter", o.id);
+            // Not every operation takes a positional argument: `arc chunk`
+            // is driven entirely by --total and --segments, and `arc upnp`
+            // by four flags. Requiring one would be an assumption about the
+            // shape of a command line, not a fact about the manifest.
         }
     }
 
