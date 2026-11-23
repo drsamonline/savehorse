@@ -160,6 +160,33 @@ jobs:
           cargo run --quiet -- morph undo smoke/ren/journal.json
           test -f smoke/ren/one.txt
 
+          # aegis — encrypt, decrypt, shred, scan
+          printf 'secret payload' > smoke/secret.txt
+          cargo run --quiet -- aegis encrypt smoke/secret.txt --out smoke/secret.vault --passphrase hunter2
+          test -s smoke/secret.vault
+          cargo run --quiet -- aegis decrypt smoke/secret.vault --out smoke/secret.out --passphrase hunter2
+          cmp smoke/secret.txt smoke/secret.out
+          if cargo run --quiet -- aegis decrypt smoke/secret.vault --out smoke/bad.out --passphrase wrong 2>err3.txt; then
+            echo "a wrong passphrase must fail"
+            exit 1
+          fi
+          test ! -f smoke/bad.out
+          cargo run --quiet -- aegis shred smoke/secret.txt --dry-run
+          test -f smoke/secret.txt
+          cargo run --quiet -- aegis shred smoke/secret.txt
+          test ! -f smoke/secret.txt
+          printf '[autorun]\nopen=x.exe\n' > smoke/autorun.inf
+          cargo run --quiet -- aegis scan smoke
+          rm -f smoke/autorun.inf
+          if cargo run --quiet -- aegis harden smoke/px.png 2>err4.txt; then
+            echo "a PNG must not pass as a PE"
+            exit 1
+          fi
+
+          # pulse
+          cargo run --quiet -- pulse hash smoke/doc.md
+          cargo run --quiet -- pulse temp smoke --top 3
+
           # a planned operation must refuse, and say why
           if cargo run --quiet -- aegis shred smoke/text.txt 2>err.txt; then
             echo "planned operation should have failed"

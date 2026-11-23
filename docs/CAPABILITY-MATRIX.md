@@ -17,17 +17,30 @@ From `aegis` (gen 1) and `vault` (gen 2).
 
 | Operation | What it does | Status |
 |---|---|---|
-| `aegis.encrypt` | AES-256-GCM encrypt with passphrase or keyfile | planned |
-| `aegis.decrypt` | Decrypt a container | planned |
-| `aegis.shred` | DoD 5220.22-M three-pass overwrite and remove | planned |
-| `aegis.scan` | Signature and heuristic threat scan | planned |
+| `aegis.encrypt` | AES-256-GCM encrypt with passphrase or keyfile | **ready** |
+| `aegis.decrypt` | Decrypt a container | **ready** |
+| `aegis.shred` | DoD 5220.22-M three-pass overwrite and remove | **ready** |
+| `aegis.scan` | Signature and heuristic threat scan | **ready** |
 | `aegis.persistence` | Audit startup and persistence vectors | planned |
-| `aegis.harden` | Audit DEP, ASLR and signing on an executable | planned |
+| `aegis.harden` | Audit DEP, ASLR and signing on an executable | **ready** |
 
-**Porting note.** Gen 1 `aegis` derived keys with a hand-written LCG PRNG and
-its own CRC32. That is not cryptographic randomness and must not ship. The port
-takes gen 2 `vault`'s implementation (`aes-gcm`, `pbkdf2`, `rand`, `sha2`) and
-retires the old container format.
+**Porting note — the cryptography was replaced, not carried.** Gen 1 `aegis`
+derived keys from a hand-written linear congruential generator seeded with the
+file size, and used a home-made CRC-32 as its integrity check. Neither is a
+security primitive. The encryption here is `vault`'s: AES-256-GCM, PBKDF2-
+HMAC-SHA256 over 100,000 rounds, a random salt and nonce from the OS entropy
+source.
+
+The container keeps vault's `VAULT\x01` header byte for byte, so files the old
+`vault` wrote still open. Containers written by the old `aegis` (magic
+`AEGISENC`) do not: they were encrypted with the broken generator, and the
+honest migration is to decrypt them once with the old binary and re-encrypt.
+
+Shredding's third pass now draws from the OS entropy source rather than a
+sequence derived from the file size, which anyone who knows the size could
+reproduce. `aegis.scan` runs its heuristics always, and matches a signature
+database only when one is supplied — with none, it says so rather than
+implying it checked.
 
 ## forge — Binary Lab
 
@@ -216,8 +229,8 @@ From `pulse` (gen 2) and `beacon` (gen 1).
 | `pulse.hardware` | CPU, memory, architecture | planned |
 | `pulse.procs` | Processes, threads, priority | planned |
 | `pulse.drives` | Drives, filesystems, free space | planned |
-| `pulse.hash` | CRC32 and SHA-256 | planned |
-| `pulse.temp` | Reclaimable temporary storage | planned |
+| `pulse.hash` | CRC32 and SHA-256 | **ready** |
+| `pulse.temp` | Reclaimable temporary storage | **ready** |
 | `pulse.services` | Background services audit | planned |
 | `pulse.priority` | Change process priority | planned |
 
@@ -285,8 +298,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ready | 50 |
-| Operations planned | 38 |
+| Operations ready | 57 |
+| Operations planned | 31 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

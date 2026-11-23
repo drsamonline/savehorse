@@ -13,6 +13,8 @@ members = [
     "crates/savehorse-revive",
     "crates/savehorse-forge",
     "crates/savehorse-morph",
+    "crates/savehorse-aegis",
+    "crates/savehorse-pulse",
     "apps/savehorse-cli",
 ]
 
@@ -37,6 +39,8 @@ savehorse-arc = { path = "crates/savehorse-arc" }
 savehorse-revive = { path = "crates/savehorse-revive" }
 savehorse-forge = { path = "crates/savehorse-forge" }
 savehorse-morph = { path = "crates/savehorse-morph" }
+savehorse-aegis = { path = "crates/savehorse-aegis" }
+savehorse-pulse = { path = "crates/savehorse-pulse" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -44,6 +48,9 @@ regex = "1"
 sha2 = "0.10"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp", "gif", "ico"] }
 zip = { version = "9", default-features = false, features = ["deflate"] }
+aes-gcm = "0.10"
+pbkdf2 = { version = "0.12", default-features = false, features = ["simple"] }
+rand = "0.8"
 
 [profile.release]
 opt-level = 3

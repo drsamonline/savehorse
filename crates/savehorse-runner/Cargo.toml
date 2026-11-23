@@ -20,5 +20,7 @@ savehorse-arc.workspace = true
 savehorse-revive.workspace = true
 savehorse-forge.workspace = true
 savehorse-morph.workspace = true
+savehorse-aegis.workspace = true
+savehorse-pulse.workspace = true
 serde.workspace = true
 serde_json.workspace = true

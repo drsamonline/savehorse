@@ -1,0 +1,19 @@
+[package]
+name = "savehorse-aegis"
+description = "Vault & Security: authenticated encryption, secure shredding, threat heuristics and binary hardening."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+savehorse-core.workspace = true
+savehorse-forge.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+aes-gcm.workspace = true
+pbkdf2.workspace = true
+rand.workspace = true

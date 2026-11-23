@@ -518,6 +518,51 @@ const P_PAD: Param = Param {
     options: &[],
 };
 
+const P_PASSPHRASE: Param = Param {
+    name: "passphrase",
+    kind: ParamKind::Secret,
+    positional: false,
+    required: false,
+    help: "Secret used to derive the key (or use --keyfile)",
+    options: &[],
+};
+
+const P_KEYFILE: Param = Param {
+    name: "keyfile",
+    kind: ParamKind::Path,
+    positional: false,
+    required: false,
+    help: "File whose bytes are mixed into the key",
+    options: &[],
+};
+
+const P_SIGNATURES: Param = Param {
+    name: "signatures",
+    kind: ParamKind::Path,
+    positional: false,
+    required: false,
+    help: "JSON array of { name, crc32 } to match against",
+    options: &[],
+};
+
+const P_PATH_OPT: Param = Param {
+    name: "path",
+    kind: ParamKind::Path,
+    positional: true,
+    required: false,
+    help: "Directory to audit (defaults to the system temporary directory)",
+    options: &[],
+};
+
+const P_TOP: Param = Param {
+    name: "top",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "How many of the largest files to list (default 10)",
+    options: &[],
+};
+
 const P_JOURNAL: Param = Param {
     name: "journal",
     kind: ParamKind::Path,
@@ -782,6 +827,20 @@ const MORPH_RENAME: &[Param] = &[
     P_EXT_LOWER, P_NUMBER, P_START, P_STEP, P_PAD, P_JOURNAL,
 ];
 
+
+// ---------------------------------------------------------------------------
+// aegis — Vault & Security
+// ---------------------------------------------------------------------------
+
+const AEGIS_CRYPTO: &[Param] = &[P_PATH, P_OUT_OPT, P_PASSPHRASE, P_KEYFILE];
+const AEGIS_SCAN: &[Param] = &[P_PATH, P_SIGNATURES];
+
+// ---------------------------------------------------------------------------
+// pulse — System
+// ---------------------------------------------------------------------------
+
+const PULSE_TEMP: &[Param] = &[P_PATH_OPT, P_TOP];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -806,12 +865,12 @@ pub static MODULES: &[Module] = &[
 /// Every operation, module by module.
 pub static OPS: &[Op] = &[
     // -- aegis -------------------------------------------------------------
-    Op { id: "aegis.encrypt",    module: "aegis", name: "encrypt",    summary: "Encrypt a file with a passphrase or keyfile (AES-256-GCM)", danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "aegis.decrypt",    module: "aegis", name: "decrypt",    summary: "Decrypt a container made by encrypt",                     danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "aegis.shred",      module: "aegis", name: "shred",      summary: "Overwrite and remove a file (DoD 5220.22-M, 3 passes)",    danger: Danger::Irreversible, status: Status::Planned, params: &[] },
-    Op { id: "aegis.scan",       module: "aegis", name: "scan",       summary: "Scan for signature and heuristic threats",                 danger: Danger::Safe,         status: Status::Planned, params: &[] },
+    Op { id: "aegis.encrypt", module: "aegis", name: "encrypt", summary: "Encrypt a file with a passphrase or keyfile (AES-256-GCM)", danger: Danger::Safe, status: Status::Implemented, params: AEGIS_CRYPTO },
+    Op { id: "aegis.decrypt", module: "aegis", name: "decrypt", summary: "Decrypt a container made by encrypt", danger: Danger::Safe, status: Status::Implemented, params: AEGIS_CRYPTO },
+    Op { id: "aegis.shred", module: "aegis", name: "shred", summary: "Overwrite and remove a file (DoD 5220.22-M, 3 passes)", danger: Danger::Irreversible, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "aegis.scan", module: "aegis", name: "scan", summary: "Scan for signature and heuristic threats", danger: Danger::Safe, status: Status::Implemented, params: AEGIS_SCAN },
     Op { id: "aegis.persistence",module: "aegis", name: "persistence",summary: "Audit startup and persistence vectors",                    danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "aegis.harden",     module: "aegis", name: "harden",     summary: "Audit an executable for DEP, ASLR and signing",            danger: Danger::Safe,         status: Status::Planned, params: &[] },
+    Op { id: "aegis.harden", module: "aegis", name: "harden", summary: "Audit an executable for DEP, ASLR and signing", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
 
     // -- forge -------------------------------------------------------------
     Op { id: "forge.inspect", module: "forge", name: "inspect", summary: "Read DOS, COFF and optional PE headers", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
@@ -888,8 +947,8 @@ pub static OPS: &[Op] = &[
     Op { id: "pulse.hardware", module: "pulse", name: "hardware", summary: "CPU, memory and architecture",         danger: Danger::Safe, status: Status::Planned, params: &[] },
     Op { id: "pulse.procs",    module: "pulse", name: "procs",    summary: "Running processes, threads, priority", danger: Danger::Safe, status: Status::Planned, params: &[] },
     Op { id: "pulse.drives",   module: "pulse", name: "drives",   summary: "Drives, filesystems, free space",      danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pulse.hash",     module: "pulse", name: "hash",     summary: "CRC32 and SHA-256 of a file",          danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pulse.temp",     module: "pulse", name: "temp",     summary: "Audit reclaimable temporary storage",  danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "pulse.hash", module: "pulse", name: "hash", summary: "CRC32 and SHA-256 of a file", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "pulse.temp", module: "pulse", name: "temp", summary: "Audit reclaimable temporary storage", danger: Danger::Safe, status: Status::Implemented, params: PULSE_TEMP },
     Op { id: "pulse.services", module: "pulse", name: "services", summary: "Audit background services",            danger: Danger::Safe, status: Status::Planned, params: &[] },
     Op { id: "pulse.priority", module: "pulse", name: "priority", summary: "Change a process priority class",      danger: Danger::Destructive, status: Status::Planned, params: &[] },
 
@@ -962,7 +1021,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 88, "the plan promises 88 operations");
-        assert_eq!(implemented, 50, "sift 9, scout 3, glyph 6, halo 5, iris 6, arc 6, revive 7, forge 6, morph 2");
+        assert_eq!(implemented, 57, "sift 9, scout 3, glyph 6, halo 5, iris 6, arc 6, revive 7, forge 6, morph 2, aegis 5, pulse 2");
     }
 
     #[test]

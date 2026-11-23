@@ -61,6 +61,25 @@ pub struct HexLine {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct SecurityFlags {
+    pub file_path: String,
+    pub is_64bit: bool,
+    pub machine_type: String,
+    /// Data execution prevention (NX_COMPAT, 0x0100).
+    pub dep: bool,
+    /// Address space layout randomisation (DYNAMIC_BASE, 0x0040).
+    pub aslr: bool,
+    /// High-entropy 64-bit ASLR (HIGH_ENTROPY_VA, 0x0020).
+    pub high_entropy_aslr: bool,
+    /// Control Flow Guard (GUARD_CF, 0x4000).
+    pub control_flow_guard: bool,
+    /// A non-zero certificate table, which usually means Authenticode signed.
+    pub signed_heuristic: bool,
+    /// Raw DllCharacteristics for anything not covered above.
+    pub dll_characteristics: u16,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct PatchResult {
     pub file: String,
     pub offset: u64,
@@ -482,6 +501,87 @@ pub fn apply_patch(
     })
 }
 
+
+/// Read the hardening flags a PE sets about itself.
+///
+/// These are the bits the loader obeys: whether the image opts into DEP, into
+/// ASLR, and whether it was built with Control Flow Guard. `signed_heuristic`
+/// only checks that the certificate table is non-empty — it does not validate
+/// the signature.
+pub fn security_flags(path: &Path) -> Result<SecurityFlags> {
+    let mut file = File::open(path)?;
+    let file_size = file.metadata()?.len();
+
+    let mut dos = [0u8; 64];
+    file.read_exact(&mut dos)?;
+    if &dos[0..2] != b"MZ" {
+        return Err(Error::Invalid(
+            "not a PE binary: the MZ signature is missing".to_string(),
+        ));
+    }
+
+    let e_lfanew = read_u32(&dos, 60) as u64;
+    if e_lfanew + 24 > file_size {
+        return Err(Error::Invalid(
+            "the DOS header points past the end of the file".to_string(),
+        ));
+    }
+
+    file.seek(SeekFrom::Start(e_lfanew))?;
+    let mut coff = [0u8; 24];
+    file.read_exact(&mut coff)?;
+    if &coff[0..4] != b"PE\0\0" {
+        return Err(Error::Invalid(
+            "not a PE binary: the PE signature is missing".to_string(),
+        ));
+    }
+
+    let machine = read_u16(&coff, 4);
+    let opt_size = read_u16(&coff, 20);
+    if opt_size < 70 {
+        return Err(Error::Invalid(
+            "the optional header is too small to describe the image".to_string(),
+        ));
+    }
+
+    let mut opt = vec![0u8; opt_size as usize];
+    file.read_exact(&mut opt)?;
+
+    let magic = read_u16(&opt, 0);
+    let is_64bit = magic == 0x020B;
+    let characteristics = read_u16(&opt, 70);
+
+    // The certificate table is data directory entry 4. The array starts at 112
+    // for PE32+ and 96 for PE32, and each entry is eight bytes.
+    let dir_base = if is_64bit { 112 } else { 96 };
+    let cert_offset = dir_base + 4 * 8;
+    let signed = if opt.len() >= cert_offset + 8 {
+        read_u32(&opt, cert_offset) != 0 && read_u32(&opt, cert_offset + 4) != 0
+    } else {
+        false
+    };
+
+    let machine_type = match machine {
+        0x8664 => "x86_64 (AMD64)",
+        0x014C => "x86 (32-bit)",
+        0xAA64 => "ARM64",
+        0x01C0 => "ARM",
+        _ => "unknown",
+    };
+
+    Ok(SecurityFlags {
+        file_path: path.to_string_lossy().to_string(),
+        is_64bit,
+        machine_type: machine_type.to_string(),
+        dep: characteristics & 0x0100 != 0,
+        aslr: characteristics & 0x0040 != 0,
+        high_entropy_aslr: characteristics & 0x0020 != 0,
+        control_flow_guard: characteristics & 0x4000 != 0,
+        signed_heuristic: signed,
+        dll_characteristics: characteristics,
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -538,6 +638,25 @@ mod tests {
         }
 
         pe
+    }
+
+    #[test]
+    fn reads_hardening_flags() {
+        let dir = scratch("flags");
+        let file = dir.join("a.exe");
+        let mut pe = minimal_pe();
+        // DEP | ASLR | HIGH_ENTROPY_VA | CFG
+        pe[0x98 + 70..0x98 + 72].copy_from_slice(&0x4140u16.to_le_bytes());
+        fs::write(&file, &pe).unwrap();
+
+        let flags = security_flags(&file).unwrap();
+        assert!(flags.is_64bit);
+        assert!(flags.dep, "NX_COMPAT should be set");
+        assert!(flags.aslr, "DYNAMIC_BASE should be set");
+        assert!(flags.high_entropy_aslr);
+        assert!(flags.control_flow_guard);
+        assert!(!flags.signed_heuristic, "no certificate table in the fixture");
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]

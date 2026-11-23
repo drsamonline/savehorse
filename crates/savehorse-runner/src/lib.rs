@@ -192,6 +192,13 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "forge.patch" => forge_patch(req),
         "morph.rename" => morph_rename(req),
         "morph.undo" => morph_undo(req),
+        "aegis.encrypt" => aegis_encrypt(req),
+        "aegis.decrypt" => aegis_decrypt(req),
+        "aegis.shred" => aegis_shred(req),
+        "aegis.scan" => aegis_scan(req),
+        "aegis.harden" => aegis_harden(req),
+        "pulse.hash" => pulse_hash(req),
+        "pulse.temp" => pulse_temp(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -1287,6 +1294,151 @@ fn morph_undo(req: &Request) -> Result<Outcome> {
         outcome = outcome.preview();
     }
     Ok(outcome)
+}
+
+
+// ---------------------------------------------------------------------------
+// aegis
+// ---------------------------------------------------------------------------
+
+fn aegis_encrypt(req: &Request) -> Result<Outcome> {
+    let input = PathBuf::from(req.position(0, "path")?);
+    let out = req.value("out").map(PathBuf::from);
+    let keyfile = req.value("keyfile").map(PathBuf::from);
+
+    let r = savehorse_aegis::encrypt(&input, out.as_deref(), req.value("passphrase"), keyfile.as_deref())?;
+
+    Ok(Outcome::new(
+        format!(
+            "encrypted '{}' -> '{}' ({} -> {} byte(s), {})\n",
+            r.input_file, r.output_file, r.input_size_bytes, r.output_size_bytes, r.cipher
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn aegis_decrypt(req: &Request) -> Result<Outcome> {
+    let input = PathBuf::from(req.position(0, "path")?);
+    let out = req.value("out").map(PathBuf::from);
+    let keyfile = req.value("keyfile").map(PathBuf::from);
+
+    let r = savehorse_aegis::decrypt(&input, out.as_deref(), req.value("passphrase"), keyfile.as_deref())?;
+
+    Ok(Outcome::new(
+        format!(
+            "decrypted '{}' -> '{}' ({} byte(s) recovered)\n",
+            r.input_file, r.output_file, r.output_size_bytes
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn aegis_shred(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let dry_run = req.has("dry-run");
+
+    let r = savehorse_aegis::shred(&path, dry_run)?;
+
+    let text = if r.dry_run {
+        format!(
+            "would overwrite '{}' three times ({} byte(s)), truncate it and unlink it\n(re-run without --dry-run to destroy the file)\n",
+            r.original_path, r.original_size_bytes
+        )
+    } else {
+        format!(
+            "shredded '{}' — {} byte(s), {} passes, unlinked\n",
+            r.original_path, r.original_size_bytes, r.passes_completed
+        )
+    };
+
+    let mut outcome = Outcome::new(text, to_json(&r)?);
+    if r.dry_run {
+        outcome = outcome.preview();
+    }
+    Ok(outcome)
+}
+
+fn aegis_scan(req: &Request) -> Result<Outcome> {
+    let target = PathBuf::from(req.position(0, "path")?);
+
+    let signatures = match req.value("signatures") {
+        Some(path) if !path.trim().is_empty() => {
+            savehorse_aegis::load_signatures(&PathBuf::from(path))?
+        }
+        _ => Vec::new(),
+    };
+
+    let r = savehorse_aegis::scan(&target, &signatures)?;
+
+    let mut text = format!(
+        "scanned {} file(s) in '{}'\n{} threat(s) found; {} signature(s) loaded\n",
+        r.files_scanned, r.target_path, r.threats_found, r.signatures_loaded
+    );
+    for threat in &r.threats {
+        text.push_str(&format!(
+            "  [{}] {} — {}\n    {}\n",
+            threat.severity, threat.threat_name, threat.file_path, threat.detail
+        ));
+    }
+    if r.clean {
+        text.push_str("clean\n");
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn aegis_harden(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let f = savehorse_aegis::harden(&path)?;
+
+    let mark = |on: bool| if on { "yes" } else { "NO" };
+    let text = format!(
+        "file       {}\nmachine    {} ({}-bit)\nDEP        {}\nASLR       {}\nhigh-entropy ASLR {}\nCFG        {}\nsigned     {} (certificate table present)\ndll chars  0x{:04X}\n",
+        f.file_path,
+        f.machine_type,
+        if f.is_64bit { 64 } else { 32 },
+        mark(f.dep),
+        mark(f.aslr),
+        mark(f.high_entropy_aslr),
+        mark(f.control_flow_guard),
+        if f.signed_heuristic { "yes" } else { "no" },
+        f.dll_characteristics
+    );
+
+    Ok(Outcome::new(text, to_json(&f)?))
+}
+
+// ---------------------------------------------------------------------------
+// pulse
+// ---------------------------------------------------------------------------
+
+fn pulse_hash(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let h = savehorse_pulse::hash_file(&path)?;
+
+    let text = format!(
+        "file       {}\nsize       {} ({})\ncrc32      {}\nsha256     {}\n",
+        h.file, h.size_bytes, h.size_human, h.crc32, h.sha256
+    );
+    Ok(Outcome::new(text, to_json(&h)?))
+}
+
+fn pulse_temp(req: &Request) -> Result<Outcome> {
+    let directory = req.positional.first().map(PathBuf::from);
+    let top = req.number("top")?.unwrap_or(10);
+
+    let r = savehorse_pulse::audit_temp(directory.as_deref(), top)?;
+
+    let mut text = format!(
+        "directory  {}\nfiles      {}\ntotal      {} ({} byte(s))\n\nLARGEST\n",
+        r.directory, r.files, r.total_human, r.total_bytes
+    );
+    for entry in &r.largest {
+        text.push_str(&format!("  {:>10}  {}\n", entry.size_human, entry.path));
+    }
+    text.push_str("\nnothing was deleted\n");
+
+    Ok(Outcome::new(text, to_json(&r)?))
 }
 
 // ---------------------------------------------------------------------------
