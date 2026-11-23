@@ -18,7 +18,7 @@ Early. This is the spine, not the finished product.
 |---|---|
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ported | 18 — `sift` ×4, `scout` ×3, `glyph` ×6, `halo` ×5 |
+| Operations ported | 30 — `sift` 4, `scout` 3, `glyph` 6, `halo` 5, `iris` 6, `arc` 6 |
 | GUI | Tauri 2 + React shell |
 | Platforms | Windows, macOS, Linux |
 

@@ -160,6 +160,18 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "halo.extract" => halo_extract(req),
         "halo.verify" => halo_verify(req),
         "halo.convert" => halo_convert(req),
+        "iris.info" => iris_info(req),
+        "iris.convert" => iris_convert(req),
+        "iris.thumb" => iris_thumb(req),
+        "iris.transform" => iris_transform(req),
+        "iris.stats" => iris_stats(req),
+        "iris.batch" => iris_batch(req),
+        "arc.create" => arc_create(req),
+        "arc.extract" => arc_extract(req),
+        "arc.list" => arc_list(req),
+        "arc.test" => arc_test(req),
+        "arc.split" => arc_split(req),
+        "arc.join" => arc_join(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -596,6 +608,240 @@ fn halo_convert(req: &Request) -> Result<Outcome> {
         format!(
             "converted '{}' -> '{}' ({} raw sector(s) -> {} byte(s))\n",
             r.source_file, r.output_file, r.source_sectors, r.output_bytes
+        ),
+        to_json(&r)?,
+    ))
+}
+
+
+// ---------------------------------------------------------------------------
+// iris
+// ---------------------------------------------------------------------------
+
+fn iris_info(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let i = savehorse_iris::inspect_image(&path)?;
+
+    let text = format!(
+        "file       {}\nformat     {}\nsize       {}x{}\naspect     {} ({})\ncolour     {}\nbytes      {}\n",
+        i.file, i.format, i.width, i.height, i.aspect_ratio, i.aspect_ratio_float, i.color_type, i.byte_size
+    );
+    Ok(Outcome::new(text, to_json(&i)?))
+}
+
+fn iris_convert(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let r = savehorse_iris::convert_image(&path, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "converted '{}' -> '{}' ({}x{}, {} byte(s))\n",
+            r.source_file, r.output_file, r.width, r.height, r.output_byte_size
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn iris_thumb(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let width = req.number("width")?.ok_or_else(|| Error::Invalid("--width is required".to_string()))? as u32;
+    let height = req.number("height")?.ok_or_else(|| Error::Invalid("--height is required".to_string()))? as u32;
+
+    let r = savehorse_iris::thumb_image(&path, &out, width, height)?;
+
+    Ok(Outcome::new(
+        format!(
+            "thumbnail '{}' -> '{}' ({} -> {})\n",
+            r.source_file, r.output_file, r.original_dimensions, r.thumbnail_dimensions
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn iris_transform(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let rotate = req.number("rotate")?.map(|n| n as u32);
+
+    let r = savehorse_iris::transform_image(&path, &out, rotate, req.has("flip-h"), req.has("flip-v"))?;
+
+    let mut what = Vec::new();
+    if let Some(d) = r.rotation {
+        what.push(format!("rotate {}", d));
+    }
+    if r.flip_horizontal {
+        what.push("flip horizontal".to_string());
+    }
+    if r.flip_vertical {
+        what.push("flip vertical".to_string());
+    }
+    if what.is_empty() {
+        what.push("no change".to_string());
+    }
+
+    Ok(Outcome::new(
+        format!(
+            "'{}' -> '{}' ({}) now {}\n",
+            r.source_file, r.output_file, what.join(", "), r.new_dimensions
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn iris_stats(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let s = savehorse_iris::stats_image(&path)?;
+
+    let text = format!(
+        "file       {}\nsize       {}x{} ({} pixels)\nred        {}\ngreen      {}\nblue       {}\nalpha      {}\nluminance  {}\n",
+        s.file, s.width, s.height, s.total_pixels, s.mean_red, s.mean_green, s.mean_blue, s.mean_alpha, s.mean_luminance
+    );
+    Ok(Outcome::new(text, to_json(&s)?))
+}
+
+fn iris_batch(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let format = required_value(req, "format")?;
+    let size = req.number("size")?.map(|n| n as u32);
+
+    let r = savehorse_iris::batch_process(&path, &out, format, size)?;
+
+    let mut text = format!(
+        "{} image(s) -> {} ({} failed)\n",
+        r.processed.len(),
+        r.target_format,
+        r.failed.len()
+    );
+    for p in &r.processed {
+        text.push_str(&format!("  {}\n", p));
+    }
+    for f in &r.failed {
+        text.push_str(&format!("  ! {}\n", f));
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+// ---------------------------------------------------------------------------
+// arc
+// ---------------------------------------------------------------------------
+
+fn arc_create(req: &Request) -> Result<Outcome> {
+    let out = PathBuf::from(required_value(req, "out")?);
+    let paths: Vec<PathBuf> = req.positional.iter().map(PathBuf::from).collect();
+    if paths.is_empty() {
+        return Err(Error::Invalid("at least one path to archive is required".to_string()));
+    }
+
+    let r = savehorse_arc::create_archive(&out, &paths, req.has("store"))?;
+
+    Ok(Outcome::new(
+        format!(
+            "created '{}' — {} file(s), {} -> {} byte(s), {}\n",
+            r.archive, r.files_added, r.bytes_in, r.bytes_out, r.compression_method
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn arc_extract(req: &Request) -> Result<Outcome> {
+    let archive = PathBuf::from(req.position(0, "archive")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+
+    let r = savehorse_arc::extract_archive(&archive, &out, req.value("filter"))?;
+
+    let mut text = format!(
+        "extracted {} file(s) from '{}' to '{}'\n",
+        r.extracted.len(),
+        r.archive,
+        r.output_dir
+    );
+    if r.skipped > 0 {
+        text.push_str(&format!("  {} entr(ies) skipped as unsafe or unreadable\n", r.skipped));
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn arc_list(req: &Request) -> Result<Outcome> {
+    let archive = PathBuf::from(req.position(0, "archive")?);
+    let entries = savehorse_arc::list_archive(&archive)?;
+
+    let total_uncompressed: u64 = entries.iter().map(|e| e.uncompressed_size).sum();
+    let total_compressed: u64 = entries.iter().map(|e| e.compressed_size).sum();
+
+    let mut text = format!(
+        "{:<10} {:<10} {:<8} {:<10} {}\n{}\n",
+        "LENGTH", "COMPRESSED", "RATIO", "CRC32", "NAME", "-".repeat(65)
+    );
+    for e in &entries {
+        text.push_str(&format!(
+            "{:<10} {:<10} {:<8} {:<10} {}\n",
+            e.uncompressed_size, e.compressed_size, e.compression_ratio, e.crc32, e.name
+        ));
+    }
+    text.push_str(&format!(
+        "{}\n{:<10} {:<10}          {} item(s)\n",
+        "-".repeat(65),
+        total_uncompressed,
+        total_compressed,
+        entries.len()
+    ));
+
+    Ok(Outcome::new(text, to_json(&entries)?))
+}
+
+fn arc_test(req: &Request) -> Result<Outcome> {
+    let archive = PathBuf::from(req.position(0, "archive")?);
+    let r = savehorse_arc::test_archive(&archive)?;
+
+    let mut text = if r.failed.is_empty() {
+        format!("OK '{}' — all {} entr(ies) read cleanly\n", r.archive, r.passed)
+    } else {
+        format!("FAILED '{}' — {} of {} entr(ies) failed\n", r.archive, r.failed.len(), r.entries)
+    };
+    for f in &r.failed {
+        text.push_str(&format!("  ! {}\n", f));
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn arc_split(req: &Request) -> Result<Outcome> {
+    let file = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let size = req
+        .size("size")?
+        .ok_or_else(|| Error::Invalid("--size is required, e.g. 10m".to_string()))?;
+
+    let manifest = savehorse_arc::split_file(&file, size, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "split '{}' ({} byte(s)) into {} chunk(s) of {} byte(s) in '{}'\n",
+            manifest.original_filename,
+            manifest.total_size,
+            manifest.chunk_count,
+            manifest.chunk_size,
+            out.display()
+        ),
+        to_json(&manifest)?,
+    ))
+}
+
+fn arc_join(req: &Request) -> Result<Outcome> {
+    let input = PathBuf::from(req.position(0, "input")?);
+    let out = req.value("out").map(PathBuf::from);
+
+    let r = savehorse_arc::join_chunks(&input, out.as_deref())?;
+
+    Ok(Outcome::new(
+        format!(
+            "joined {} chunk(s) into '{}' ({} byte(s))\n",
+            r.chunks, r.output, r.total_bytes
         ),
         to_json(&r)?,
     ))

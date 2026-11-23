@@ -80,12 +80,12 @@ and contact sheets.
 
 | Operation | What it does | Status |
 |---|---|---|
-| `iris.info` | Dimensions, format, bit depth, aspect | planned |
-| `iris.convert` | Convert between formats | planned |
-| `iris.thumb` | Aspect-preserving downscale | planned |
-| `iris.transform` | Rotate and flip | planned |
-| `iris.stats` | Colour and luminance statistics | planned |
-| `iris.batch` | One operation across a folder | planned |
+| `iris.info` | Dimensions, format, bit depth, aspect | **ready** |
+| `iris.convert` | Convert between formats | **ready** |
+| `iris.thumb` | Aspect-preserving downscale | **ready** |
+| `iris.transform` | Rotate and flip | **ready** |
+| `iris.stats` | Colour and luminance statistics | **ready** |
+| `iris.batch` | One operation across a folder | **ready** |
 | `iris.ico` | Multi-resolution Windows icon | planned |
 | `iris.sheet` | Contact sheet | planned |
 
@@ -95,12 +95,12 @@ From `arc` (gen 2) and `vortex` (gen 1).
 
 | Operation | What it does | Status |
 |---|---|---|
-| `arc.create` | Pack files | planned |
-| `arc.extract` | Unpack | planned |
-| `arc.list` | List contents | planned |
-| `arc.test` | Verify integrity | planned |
-| `arc.split` | Split into volumes | planned |
-| `arc.join` | Reassemble volumes | planned |
+| `arc.create` | Pack files | **ready** |
+| `arc.extract` | Unpack | **ready** |
+| `arc.list` | List contents | **ready** |
+| `arc.test` | Verify integrity | **ready** |
+| `arc.split` | Split into volumes | **ready** |
+| `arc.join` | Reassemble volumes | **ready** |
 | `arc.chunk` | Plan a multi-segment download | planned |
 | `arc.torrent` | Read `.torrent` metadata | planned |
 | `arc.probe` | Probe and time a TCP endpoint | planned |
@@ -109,6 +109,10 @@ From `arc` (gen 2) and `vortex` (gen 1).
 **Porting note.** `vortex`'s transfer command was a simulation, not a
 downloader. It is declared here but should become real or be cut; it will not
 be shipped as a pretend feature.
+
+**Archive note.** Extraction passes every entry through `enclosed_name`, so an
+archive cannot write outside the destination directory — the original had this
+right and it is kept.
 
 ## sift — Text & Search
 
@@ -163,6 +167,11 @@ inventory and byte-diff.
 | `scout.treemap` | Space usage treemap | planned |
 | `scout.inventory` | Depth, capacity, largest files | planned |
 | `scout.diff` | Byte-by-byte comparison | planned |
+
+**Porting note.** Batch processing no longer swallows save errors. The original
+wrote `let _ = img.save(...)` and counted the file as processed regardless, so a
+run could report success while writing nothing; failures are now collected and
+returned.
 
 **Porting note.** The original computed a full SHA-256 of every file. The port
 groups by size first and only hashes where a collision is possible, which is
@@ -252,8 +261,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ready | 18 |
-| Operations planned | 70 |
+| Operations ready | 30 |
+| Operations planned | 58 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

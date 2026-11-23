@@ -230,6 +230,96 @@ const P_VOLUME_ID: Param = Param {
     options: &[],
 };
 
+const P_OUT_OPT: Param = Param {
+    name: "out",
+    kind: ParamKind::Path,
+    positional: false,
+    required: false,
+    help: "Where to write the result (a sensible default is used if omitted)",
+    options: &[],
+};
+
+const P_ARCHIVE: Param = Param {
+    name: "archive",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "Archive to read",
+    options: &[],
+};
+
+const P_WIDTH: Param = Param {
+    name: "width",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Bounding box width in pixels",
+    options: &[],
+};
+
+const P_HEIGHT: Param = Param {
+    name: "height",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Bounding box height in pixels",
+    options: &[],
+};
+
+const P_ROTATE: Param = Param {
+    name: "rotate",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Rotate by 90, 180 or 270 degrees",
+    options: &[],
+};
+
+const P_FLIP_H: Param = Param {
+    name: "flip-h",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Mirror left to right",
+    options: &[],
+};
+
+const P_FLIP_V: Param = Param {
+    name: "flip-v",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Mirror top to bottom",
+    options: &[],
+};
+
+const P_SIZE: Param = Param {
+    name: "size",
+    kind: ParamKind::Size,
+    positional: false,
+    required: false,
+    help: "Longest edge in pixels, or a chunk size such as 10m",
+    options: &[],
+};
+
+const P_FORMAT: Param = Param {
+    name: "format",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: true,
+    help: "Target image format",
+    options: &["png", "jpg", "bmp", "gif", "ico"],
+};
+
+const P_STORE: Param = Param {
+    name: "store",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Store without compressing",
+    options: &[],
+};
+
 const P_FILTER: Param = Param {
     name: "filter",
     kind: ParamKind::Text,
@@ -397,6 +487,26 @@ const HALO_CONVERT: &[Param] = &[P_SOURCE, P_OUT];
 // One positional path, under the name the operation calls it.
 const P_PATH_ONE: &[Param] = &[P_PATH];
 const HALO_IMAGE_ONE: &[Param] = &[P_IMAGE];
+const ARC_ONE: &[Param] = &[P_ARCHIVE];
+
+
+// ---------------------------------------------------------------------------
+// iris — Image Studio
+// ---------------------------------------------------------------------------
+
+const IRIS_CONVERT: &[Param] = &[P_PATH, P_OUT];
+const IRIS_THUMB: &[Param] = &[P_PATH, P_OUT, P_WIDTH, P_HEIGHT];
+const IRIS_TRANSFORM: &[Param] = &[P_PATH, P_OUT, P_ROTATE, P_FLIP_H, P_FLIP_V];
+const IRIS_BATCH: &[Param] = &[P_PATH, P_OUT, P_FORMAT, P_SIZE];
+
+// ---------------------------------------------------------------------------
+// arc — Archives
+// ---------------------------------------------------------------------------
+
+const ARC_CREATE: &[Param] = &[P_PATHS, P_OUT, P_STORE];
+const ARC_EXTRACT: &[Param] = &[P_ARCHIVE, P_OUT, P_FILTER];
+const ARC_SPLIT: &[Param] = &[P_PATH, P_SIZE, P_OUT];
+const ARC_JOIN: &[Param] = &[P_INPUT, P_OUT_OPT];
 
 // ---------------------------------------------------------------------------
 // The manifest
@@ -447,22 +557,22 @@ pub static OPS: &[Op] = &[
     Op { id: "halo.cover",   module: "halo", name: "cover",   summary: "Generate disc label and case artwork",          danger: Danger::Safe, status: Status::Planned, params: &[] },
 
     // -- iris --------------------------------------------------------------
-    Op { id: "iris.info",      module: "iris", name: "info",      summary: "Dimensions, format, bit depth, aspect ratio", danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "iris.convert",   module: "iris", name: "convert",   summary: "Convert between image formats",               danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "iris.thumb",     module: "iris", name: "thumb",     summary: "Downscale, keeping the aspect ratio",         danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "iris.transform", module: "iris", name: "transform", summary: "Rotate and flip",                             danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "iris.stats",     module: "iris", name: "stats",     summary: "Colour and luminance statistics",             danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "iris.batch",     module: "iris", name: "batch",     summary: "Apply one operation to a folder of images",   danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "iris.info", module: "iris", name: "info", summary: "Dimensions, format, bit depth, aspect ratio", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "iris.convert", module: "iris", name: "convert", summary: "Convert between image formats", danger: Danger::Safe, status: Status::Implemented, params: IRIS_CONVERT },
+    Op { id: "iris.thumb", module: "iris", name: "thumb", summary: "Downscale, keeping the aspect ratio", danger: Danger::Safe, status: Status::Implemented, params: IRIS_THUMB },
+    Op { id: "iris.transform", module: "iris", name: "transform", summary: "Rotate and flip", danger: Danger::Safe, status: Status::Implemented, params: IRIS_TRANSFORM },
+    Op { id: "iris.stats", module: "iris", name: "stats", summary: "Colour and luminance statistics", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "iris.batch", module: "iris", name: "batch", summary: "Apply one operation to a folder of images", danger: Danger::Safe, status: Status::Implemented, params: IRIS_BATCH },
     Op { id: "iris.ico",       module: "iris", name: "ico",       summary: "Build a multi-resolution Windows icon",       danger: Danger::Safe, status: Status::Planned, params: &[] },
     Op { id: "iris.sheet",     module: "iris", name: "sheet",     summary: "Render a contact sheet",                      danger: Danger::Safe, status: Status::Planned, params: &[] },
 
     // -- arc ---------------------------------------------------------------
-    Op { id: "arc.create",  module: "arc", name: "create",  summary: "Pack files into an archive",                danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.extract", module: "arc", name: "extract", summary: "Unpack an archive",                         danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.list",    module: "arc", name: "list",    summary: "List archive contents",                     danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.test",    module: "arc", name: "test",    summary: "Verify archive integrity",                  danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.split",   module: "arc", name: "split",   summary: "Split a large file into volumes",           danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "arc.join",    module: "arc", name: "join",    summary: "Reassemble split volumes",                  danger: Danger::Safe,         status: Status::Planned, params: &[] },
+    Op { id: "arc.create", module: "arc", name: "create", summary: "Pack files into an archive", danger: Danger::Safe, status: Status::Implemented, params: ARC_CREATE },
+    Op { id: "arc.extract", module: "arc", name: "extract", summary: "Unpack an archive", danger: Danger::Safe, status: Status::Implemented, params: ARC_EXTRACT },
+    Op { id: "arc.list", module: "arc", name: "list", summary: "List archive contents", danger: Danger::Safe, status: Status::Implemented, params: ARC_ONE },
+    Op { id: "arc.test", module: "arc", name: "test", summary: "Verify archive integrity", danger: Danger::Safe, status: Status::Implemented, params: ARC_ONE },
+    Op { id: "arc.split", module: "arc", name: "split", summary: "Split a large file into volumes", danger: Danger::Safe, status: Status::Implemented, params: ARC_SPLIT },
+    Op { id: "arc.join", module: "arc", name: "join", summary: "Reassemble split volumes", danger: Danger::Safe, status: Status::Implemented, params: ARC_JOIN },
     Op { id: "arc.chunk",   module: "arc", name: "chunk",   summary: "Plan a multi-segment download",             danger: Danger::Safe,         status: Status::Planned, params: &[] },
     Op { id: "arc.torrent", module: "arc", name: "torrent", summary: "Read metadata from a .torrent file",        danger: Danger::Safe,         status: Status::Planned, params: &[] },
     Op { id: "arc.probe",   module: "arc", name: "probe",   summary: "Probe a TCP endpoint and time it",          danger: Danger::Safe,         status: Status::Planned, params: &[] },
@@ -578,7 +688,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 88, "the plan promises 88 operations");
-        assert_eq!(implemented, 18, "sift x4, scout x3, glyph x6, halo x5 are ported");
+        assert_eq!(implemented, 30, "sift 4, scout 3, glyph 6, halo 5, iris 6, arc 6");
     }
 
     #[test]

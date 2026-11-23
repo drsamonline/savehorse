@@ -15,5 +15,7 @@ savehorse-sift.workspace = true
 savehorse-scout.workspace = true
 savehorse-glyph.workspace = true
 savehorse-halo.workspace = true
+savehorse-iris.workspace = true
+savehorse-arc.workspace = true
 serde.workspace = true
 serde_json.workspace = true

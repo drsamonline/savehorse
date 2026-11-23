@@ -83,6 +83,28 @@ jobs:
           test -f smoke/extracted/README.TXT
           grep -q 'hello iso' smoke/extracted/README.TXT
 
+          # iris — a 1x1 PNG, decoded from base64 so the test needs no fixtures
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' | base64 -d > smoke/px.png
+          cargo run --quiet -- iris info smoke/px.png
+          cargo run --quiet -- iris convert smoke/px.png --out smoke/px.bmp
+          test -s smoke/px.bmp
+          cargo run --quiet -- iris thumb smoke/px.png --out smoke/thumb.png --width 1 --height 1
+          cargo run --quiet -- iris transform smoke/px.png --out smoke/rot.png --rotate 90
+          cargo run --quiet -- iris stats smoke/px.png
+          mkdir -p smoke/imgout
+          cargo run --quiet -- iris batch smoke --out smoke/imgout --format bmp
+          test -s smoke/imgout/px.bmp
+
+          # arc
+          cargo run --quiet -- arc create smoke/iso --out smoke/tree.zip
+          cargo run --quiet -- arc list smoke/tree.zip
+          cargo run --quiet -- arc test smoke/tree.zip
+          cargo run --quiet -- arc extract smoke/tree.zip --out smoke/unzipped
+          test -f smoke/unzipped/iso/readme.txt
+          cargo run --quiet -- arc split smoke/test.iso --size 16k --out smoke/parts
+          cargo run --quiet -- arc join smoke/parts/test.iso.manifest.json --out smoke/rejoined.iso
+          cmp smoke/test.iso smoke/rejoined.iso
+
           # a planned operation must refuse, and say why
           if cargo run --quiet -- aegis shred smoke/text.txt 2>err.txt; then
             echo "planned operation should have failed"
