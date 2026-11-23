@@ -13,7 +13,18 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
 out="${1:-/tmp/demo-captured.json}"
-bin="${SAVEHORSE_BIN:-target/debug/savehorse}"
+# The binary is savehorse.exe on Windows, and it may not have been built yet.
+if [ -n "${SAVEHORSE_BIN:-}" ]; then
+  bin="$SAVEHORSE_BIN"
+else
+  cargo build --quiet -p savehorse-cli
+  bin="target/debug/savehorse"
+  [ -x "$bin" ] || bin="target/debug/savehorse.exe"
+fi
+if [ ! -x "$bin" ]; then
+  echo "could not find the savehorse binary (looked for target/debug/savehorse[.exe])" >&2
+  exit 1
+fi
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 cd "$work"
