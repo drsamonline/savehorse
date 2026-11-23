@@ -505,7 +505,8 @@ const IRIS_BATCH: &[Param] = &[P_PATH, P_OUT, P_FORMAT, P_SIZE];
 
 const ARC_CREATE: &[Param] = &[P_PATHS, P_OUT, P_STORE];
 const ARC_EXTRACT: &[Param] = &[P_ARCHIVE, P_OUT, P_FILTER];
-const ARC_SPLIT: &[Param] = &[P_PATH, P_SIZE, P_OUT];
+// Required parameters first: the manifest test enforces it.
+const ARC_SPLIT: &[Param] = &[P_PATH, P_OUT, P_SIZE];
 const ARC_JOIN: &[Param] = &[P_INPUT, P_OUT_OPT];
 
 // ---------------------------------------------------------------------------
