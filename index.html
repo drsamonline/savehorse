@@ -198,6 +198,15 @@
   }
 
   /* ---------- the tool wall ---------- */
+  #modules { position: relative; }
+  #modules::before {
+    /* one soft wash of the signal colour, so the wall sits on something */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(60% 55% at 30% 0%, rgba(216,255,79,.05), transparent 70%),
+                radial-gradient(50% 50% at 90% 60%, rgba(217,139,74,.045), transparent 70%);
+  }
+  #modules > .wrap { position: relative; }
+
   .wall {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
     gap: 12px; margin-top: 8px;
@@ -335,6 +344,61 @@
   .listing .k { color: var(--signal); }
   .listing .s { color: #9fd8b4; }
   .listing .p { color: var(--copper); }
+
+
+  /* ---------- the live terminal ---------- */
+  .term {
+    border: 1px solid var(--rule); background: var(--surface);
+    font: 400 13px/1.8 var(--mono);
+  }
+  .term .head {
+    display: flex; gap: 10px; align-items: center;
+    padding: 9px 16px; border-bottom: 1px solid var(--rule);
+    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-low);
+  }
+  .term .head .dots { display: flex; gap: 5px; margin-right: 4px; }
+  .term .head .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--rule); }
+  .term .head .sep { color: var(--ink-ghost); }
+  .term .head .now { color: var(--signal); letter-spacing: .12em; }
+  .term .head .live {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    color: var(--signal); font-size: 9.5px;
+  }
+  .term .head .live b {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--signal);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+
+  .term .body {
+    padding: 20px 22px 24px; min-height: 268px;
+    color: var(--ink-mid); white-space: pre-wrap; word-break: break-word;
+  }
+  .term .prompt { color: var(--copper); user-select: none; }
+  .term .cmd { color: var(--ink); }
+  .term .caret {
+    display: inline-block; width: 7px; height: 15px; vertical-align: -2px;
+    background: var(--signal); animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+  .term .out { display: block; }
+  .term .out .g { color: var(--ink-ghost); }
+  .term .out .ok { color: var(--signal); }
+
+  .term-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .term-chips button {
+    font: 500 11px/1 var(--mono); letter-spacing: .06em;
+    background: transparent; color: var(--ink-low);
+    border: 1px solid var(--rule); border-radius: 3px;
+    padding: 8px 11px; cursor: pointer;
+    transition: color .14s, border-color .14s;
+  }
+  .term-chips button:hover { color: var(--ink); border-color: var(--ink-ghost); }
+  .term-chips button[aria-pressed="true"] { color: var(--signal); border-color: var(--signal); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .term .caret, .term .head .live b { animation: none; }
+  }
 
   /* ---------- datasheet table (status) ---------- */
   .data { width: 100%; border-collapse: collapse; }
@@ -819,36 +883,17 @@
         in the window works in a script. Same binary, same code underneath.
       </p>
 
-      <div class="listing reveal">
-        <div class="head"><span class="dots"><i></i><i></i><i></i></span><span>savehorse — shell</span></div>
-<pre><span class="c"># find a string across a tree, as a literal or a regex</span>
-<span class="k">savehorse</span> sift search <span class="s">"TODO"</span> ./src <span class="p">--regex</span>
-
-<span class="c"># replace across files — preview first, then apply</span>
-<span class="k">savehorse</span> sift replace old_name new_name ./src <span class="p">--dry-run</span>
-<span class="k">savehorse</span> sift replace old_name new_name ./src <span class="p">--backup</span>
-
-<span class="c"># catalogue a folder, then reclaim the duplicates</span>
-<span class="k">savehorse</span> scout catalog ~/Pictures <span class="p">--format</span> markdown <span class="p">--out</span> catalog.md
-<span class="k">savehorse</span> scout duplicates ~/Downloads
-<span class="k">savehorse</span> scout clean ~/Downloads <span class="p">--commit</span>
-
-<span class="c"># encrypt, then destroy the plaintext</span>
-<span class="k">savehorse</span> aegis encrypt notes.txt <span class="p">--out</span> notes.vault <span class="p">--passphrase</span> ······
-<span class="k">savehorse</span> aegis shred notes.txt <span class="p">--dry-run</span>
-
-<span class="c"># build an ISO, verify it, then snapshot it</span>
-<span class="k">savehorse</span> halo create ./disc <span class="p">--out</span> disc.iso <span class="p">--volume-id</span> BACKUP
-<span class="k">savehorse</span> halo verify disc.iso
-<span class="k">savehorse</span> revive pack ./disc <span class="p">--out</span> disc.chronos
-
-<span class="c"># carve files out of a blob, and read a PE header</span>
-<span class="k">savehorse</span> revive carve disk.img <span class="p">--out</span> recovered
-<span class="k">savehorse</span> forge inspect app.exe
-
-<span class="c"># rename a batch, with an undo journal</span>
-<span class="k">savehorse</span> morph rename ./photos <span class="p">--case</span> title <span class="p">--number</span> <span class="p">--journal</span> undo.json</pre>
+      <div class="term reveal">
+        <div class="head">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span>savehorse — shell</span>
+          <span class="sep">·</span>
+          <span class="now" id="term-now">sift search</span>
+          <span class="live"><b></b>live</span>
+        </div>
+        <div class="body" id="term-body" aria-live="polite"></div>
       </div>
+      <div class="term-chips" id="term-chips"></div>
     </div>
   </section>
 
@@ -987,6 +1032,193 @@
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
     nodes.forEach(function (n) { io.observe(n); });
+  })();
+</script>
+
+
+<script>
+  // The terminal in the listing section. Five real commands, typed out with
+  // output matching what the tool prints. No dependency, and it degrades to the
+  // first command shown in full when motion is reduced or there is no observer.
+  (function () {
+    var body = document.getElementById('term-body');
+    var chips = document.getElementById('term-chips');
+    if (!body || !chips) return;
+
+    var demos = [
+      {
+        label: 'sift search',
+        cmd: 'savehorse sift search "TODO" ./src --regex',
+        out: [
+          './src/main.rs:14: // TODO: wire the tray agent',
+          './src/config.rs:88: // TODO: retry with backoff',
+          './src/lib.rs:203: // TODO: cache the manifest',
+          '3 match(es)'
+        ]
+      },
+      {
+        label: 'scout duplicates',
+        cmd: 'savehorse scout duplicates ~/Downloads',
+        out: [
+          "Duplicate scan of '/home/you/Downloads':",
+          '  clusters           : 2',
+          '  redundant files    : 3',
+          '  recoverable space  : 412 MB',
+          '',
+          'Cluster #1: sha256=9f2c41ab77d0e815 (206 MB each)',
+          '  keep      ~/Downloads/setup.exe',
+          '  duplicate ~/Downloads/setup (1).exe',
+          '  wasted    206 MB'
+        ]
+      },
+      {
+        label: 'aegis encrypt',
+        cmd: 'savehorse aegis encrypt thesis.pdf --out thesis.vault --passphrase',
+        out: [
+          "encrypted 'thesis.pdf' -> 'thesis.vault' (2476032 -> 2476092 byte(s), AES-256-GCM)"
+        ]
+      },
+      {
+        label: 'revive report',
+        cmd: 'savehorse revive report disk.img',
+        out: [
+          'artifacts     4',
+          'recoverable   3.2 MB',
+          '',
+          'BY FORMAT',
+          '  JPEG Image             2 file(s)         2.1 MB',
+          '  PNG Image              1 file(s)         1.0 MB',
+          '  PDF Document           1 file(s)         128 KB'
+        ]
+      },
+      {
+        label: 'morph rename',
+        cmd: 'savehorse morph rename ./photos --case title --number --dry-run',
+        out: [
+          'preview: 2 file(s) considered, 2 would change',
+          '  IMG_0031.jpg -> Img_0031_001.jpg',
+          '  IMG_0032.jpg -> Img_0032_002.jpg',
+          'nothing renamed — re-run without --dry-run to apply'
+        ]
+      }
+    ];
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // One chain at a time. Every scheduled callback carries the token it was
+    // created with and does nothing if a newer run has started, so a stale
+    // chain can never paint over the current one.
+    var token = 0;
+
+    function later(fn, delay, mine) {
+      return setTimeout(function () {
+        if (mine === token) fn();
+      }, delay);
+    }
+
+    function outLine(text, last) {
+      var el = document.createElement('span');
+      el.className = 'out' + (last ? ' ok' : '');
+      el.textContent = text || ' ';
+      return el;
+    }
+
+    // The attribute carries the state for assistive technology; the colours are
+    // set inline as well, because an attribute selector alone did not repaint
+    // reliably when the value changed after first paint.
+    function markChips(index) {
+      for (var i = 0; i < chips.children.length; i++) {
+        var chip = chips.children[i];
+        var on = i === index;
+        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        chip.style.color = on ? '#d8ff4f' : '';
+        chip.style.borderColor = on ? '#d8ff4f' : '';
+      }
+    }
+
+    function show(index, animate) {
+      var mine = ++token;
+      var demo = demos[index];
+
+      body.textContent = '';
+      var line = document.createElement('div');
+      var prompt = document.createElement('span');
+      prompt.className = 'prompt';
+      prompt.textContent = '$ ';
+      var cmd = document.createElement('span');
+      cmd.className = 'cmd';
+      var caret = document.createElement('span');
+      caret.className = 'caret';
+      line.appendChild(prompt);
+      line.appendChild(cmd);
+      line.appendChild(caret);
+      body.appendChild(line);
+      markChips(index);
+      var now = document.getElementById('term-now');
+      if (now) now.textContent = demo.label;
+
+      if (!animate) {
+        cmd.textContent = demo.cmd;
+        caret.remove();
+        demo.out.forEach(function (text, i) {
+          body.appendChild(outLine(text, i === demo.out.length - 1));
+        });
+        markChips(index);
+        return;
+      }
+
+      var pos = 0;
+      (function type() {
+        if (pos <= demo.cmd.length) {
+          cmd.textContent = demo.cmd.slice(0, pos++);
+          later(type, 15, mine);
+          return;
+        }
+        caret.remove();
+        var k = 0;
+        (function emit() {
+          if (k < demo.out.length) {
+            body.appendChild(outLine(demo.out[k], k === demo.out.length - 1));
+            k++;
+            later(emit, 80, mine);
+            return;
+          }
+          markChips(index);
+          later(function () {
+            show((index + 1) % demos.length, true);
+          }, 2800, mine);
+        })();
+      })();
+    }
+
+    demos.forEach(function (demo, i) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.textContent = demo.label;
+      chip.setAttribute('aria-pressed', 'false');
+      chip.addEventListener('click', function () {
+        show(i, !reduced);
+      });
+      chips.appendChild(chip);
+    });
+
+    if (reduced || !('IntersectionObserver' in window)) {
+      show(0, false);
+      return;
+    }
+
+    // Start once the terminal is on screen, so nothing types while the reader
+    // is still at the hero.
+    var observer = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) {
+          observer.disconnect();
+          show(0, true);
+          return;
+        }
+      }
+    }, { threshold: 0.2 });
+    observer.observe(body);
   })();
 </script>
 
