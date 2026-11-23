@@ -1,12 +1,19 @@
 # Build + release + deploy. One push, one pipeline, all from the same commit.
 #
-# The whole pipeline lives in the public app-builder kit, so a fix there reaches
-# every app at once. Do not inline it: a hand-copied version once kept
-# `if: always()` on the release job, so a FAILED build destroyed the release.
+# SPDX-FileCopyrightText: 2026 Dr Sohil Momin
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 #
-# Every push to main: build the portable EXE and the APK -> publish the rolling
-# `app-latest` release -> deploy the demo to Pages. All three come from the same
-# commit, so the live demo and the released build can never disagree.
+# This file is intentionally tiny: the whole pipeline lives in the public
+# app-builder kit, so a fix there reaches every app at once. It used to be a
+# 4.9 kB hand-copied workflow, and the copies drifted - one of them kept
+# `if: always()` on the release job, which DELETED the published release before
+# recreating it, so a failed build destroyed the release. Do not inline it again.
+#
+# What it does on every push to main:
+#   build the portable EXE and the signed APK -> publish the rolling `app-latest`
+#   release -> deploy the demo to Pages. All three come from the same commit, so
+#   the live demo and the released build can never disagree.
+#
 # Pull requests build (and are therefore checked) but never release or deploy.
 
 name: Build + deploy
@@ -22,7 +29,6 @@ permissions:
   contents: write
   pages: write
   id-token: write
-  actions: write   # the `shot` job in app-builder's build.yml dispatches a run
 
 concurrency:
   group: build
@@ -38,4 +44,5 @@ jobs:
     permissions:
       contents: write
       pages: write
+      actions: write    # the shot job dispatches the run that publishes its picture
       id-token: write
