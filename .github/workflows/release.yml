@@ -149,6 +149,24 @@ jobs:
 
       # gh is preinstalled on every runner, so the release is created with the
       # CLI rather than with a third-party action whose SHA would need pinning.
+      #
+      # Published, not drafted. A draft is invisible on the releases page, and a
+      # tag that has to be clicked into existence afterwards is a tag nobody
+      # sees. The verify job has already refused a mismatched tag, and every
+      # build job has to pass, so this is only reached when the release is real.
+      - name: Take the notes for this version
+        run: |
+          python3 - <<'PY'
+          import os, re
+          version = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          text = open("CHANGELOG.md").read()
+          pattern = r"^## \[" + re.escape(version) + r"\].*?$(.*?)(?=^## \[|\Z)"
+          found = re.search(pattern, text, re.S | re.M)
+          body = found.group(1).strip() if found else text
+          open("release-notes.md", "w").write(body + "\n")
+          print("release notes for", version, ":", len(body), "characters")
+          PY
+
       - name: Create the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -156,6 +174,6 @@ jobs:
           ls -la artifacts
           gh release create "${GITHUB_REF_NAME}" \
             --title "savehorse ${GITHUB_REF_NAME}" \
-            --notes-file CHANGELOG.md \
-            --draft \
+            --notes-file release-notes.md \
+            --latest \
             artifacts/*
