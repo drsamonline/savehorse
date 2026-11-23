@@ -316,8 +316,17 @@ Everything here is read-only. `services` asks systemd, launchd or `sc` what is
 installed and reports the command it used, so you can check the numbers
 yourself. Nothing is started, stopped or enabled.
 
-`priority` is not ported. Changing a process's priority needs a privileged call
-on every operating system.
+`priority` changes a process's scheduling class: idle, below-normal, normal,
+above-normal, high or realtime. It previews by default, so nothing moves until
+you add `--commit`.
+
+```sh
+savehorse pulse priority 4821 --level idle
+savehorse pulse priority 4821 --level high --commit
+```
+
+Raising a process above normal needs root on Unix and administrator rights on
+Windows. The refusal is reported as it happened rather than glossed over.
 
 ### revive — recovery
 
@@ -420,8 +429,7 @@ default to preview when you ask for one.
 
 ## What is not finished
 
-86 of 87 operations are ported and tested. The one that is not is
-`pulse priority`. Everything else runs.
+Every operation in the manifest is ported and tested.
 
 `savehorse ops` is the authoritative list, and it is generated from the same
 manifest the program runs from, so it cannot drift out of date.

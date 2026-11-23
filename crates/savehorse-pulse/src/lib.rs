@@ -14,9 +14,10 @@
 //! portable API for it and inventing one would be worse than shelling out to
 //! the tool that already knows.
 //!
-//! `priority` is still declared but not ported. Raising a process's priority
-//! needs a privileged platform call on every operating system, and a wrong
-//! implementation is a good way to make a machine unusable.
+//! `priority` changes a process's scheduling class. It previews by default:
+//! `--dry-run` reports what would change and touches nothing, and raising a
+//! priority above normal needs privileges on every platform, which is reported
+//! rather than assumed.
 
 use savehorse_core::{crc32, format_bytes, sha256_file, Error, Result, WalkOptions};
 use serde::{Deserialize, Serialize};
@@ -409,6 +410,191 @@ fn parse_services(platform: &str, text: &str) -> Vec<ServiceRow> {
     rows
 }
 
+
+// ---------------------------------------------------------------------------
+// Process priority
+// ---------------------------------------------------------------------------
+
+/// The scheduling classes, in the order the help lists them, from least to most
+/// demanding of the machine.
+pub const PRIORITY_LEVELS: &[&str] = &[
+    "idle",
+    "below-normal",
+    "normal",
+    "above-normal",
+    "high",
+    "realtime",
+];
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct PriorityReport {
+    pub pid: u32,
+    pub level: String,
+    pub applied: bool,
+    /// The platform's own name for the class, or the nice value on Unix.
+    pub native: String,
+    pub detail: String,
+}
+
+/// What a level means on this platform.
+///
+/// Unix uses niceness, where a larger number is a *lower* priority and only a
+/// privileged process may go negative. Windows uses a priority class, and every
+/// value is allowed but only some are wise.
+fn native_for(level: &str) -> Result<(&'static str, i64)> {
+    let pair = match level.trim().to_lowercase().as_str() {
+        "idle" => ("IDLE_PRIORITY_CLASS", 19),
+        "below-normal" => ("BELOW_NORMAL_PRIORITY_CLASS", 10),
+        "normal" => ("NORMAL_PRIORITY_CLASS", 0),
+        "above-normal" => ("ABOVE_NORMAL_PRIORITY_CLASS", -5),
+        "high" => ("HIGH_PRIORITY_CLASS", -10),
+        "realtime" => ("REALTIME_PRIORITY_CLASS", -20),
+        other => {
+            return Err(Error::Invalid(format!(
+                "unknown priority '{}': use {}",
+                other,
+                PRIORITY_LEVELS.join(", ")
+            )))
+        }
+    };
+    Ok(pair)
+}
+
+/// True when the level is above normal, which needs privileges on Unix.
+pub fn needs_privilege(level: &str) -> bool {
+    matches!(
+        level.trim().to_lowercase().as_str(),
+        "above-normal" | "high" | "realtime"
+    )
+}
+
+#[cfg(windows)]
+fn apply(pid: u32, level: &str) -> Result<String> {
+    use std::ffi::c_void;
+
+    type Handle = isize;
+    const PROCESS_SET_INFORMATION: u32 = 0x0200;
+    const PROCESS_QUERY_INFORMATION: u32 = 0x0400;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn OpenProcess(access: u32, inherit: i32, pid: u32) -> Handle;
+        fn SetPriorityClass(process: Handle, class: u32) -> i32;
+        fn CloseHandle(handle: Handle) -> i32;
+    }
+
+    let class: u32 = match level.trim().to_lowercase().as_str() {
+        "idle" => 0x0000_0040,
+        "below-normal" => 0x0000_4000,
+        "normal" => 0x0000_0020,
+        "above-normal" => 0x0000_8000,
+        "high" => 0x0000_0080,
+        "realtime" => 0x0000_0100,
+        other => {
+            return Err(Error::Invalid(format!(
+                "unknown priority '{}': use {}",
+                other,
+                PRIORITY_LEVELS.join(", ")
+            )))
+        }
+    };
+
+    unsafe {
+        let handle = OpenProcess(
+            PROCESS_SET_INFORMATION | PROCESS_QUERY_INFORMATION,
+            0,
+            pid,
+        );
+        if handle == 0 {
+            return Err(Error::Invalid(format!(
+                "could not open process {}: it may not exist, or it may need \
+                 administrator rights",
+                pid
+            )));
+        }
+        let ok = SetPriorityClass(handle, class);
+        CloseHandle(handle);
+        let _ = std::mem::size_of::<*mut c_void>();
+        if ok == 0 {
+            return Err(Error::Invalid(format!(
+                "the system refused to change process {} to {}",
+                pid, level
+            )));
+        }
+    }
+
+    let (name, _) = native_for(level)?;
+    Ok(name.to_string())
+}
+
+#[cfg(unix)]
+fn apply(pid: u32, level: &str) -> Result<String> {
+    let (_, nice) = native_for(level)?;
+    let result = unsafe {
+        // PRIO_PROCESS asks for the priority of the process with this id.
+        libc::setpriority(libc::PRIO_PROCESS, pid as libc::id_t, nice as libc::c_int)
+    };
+
+    if result != 0 {
+        let err = std::io::Error::last_os_error();
+        return Err(Error::Invalid(format!(
+            "the system refused to set nice {} on process {}: {}{}",
+            nice,
+            pid,
+            err,
+            if needs_privilege(level) {
+                " — lowering niceness below 0 needs root"
+            } else {
+                ""
+            }
+        )));
+    }
+
+    Ok(format!("nice {}", nice))
+}
+
+#[cfg(not(any(windows, unix)))]
+fn apply(_pid: u32, _level: &str) -> Result<String> {
+    Err(Error::Invalid(
+        "changing a process priority is not supported on this platform".to_string(),
+    ))
+}
+
+/// Change a process's scheduling class.
+///
+/// `dry_run` reports what would happen and changes nothing, which is the
+/// default: this operation is declared destructive in the manifest, and moving
+/// a process to a higher priority can make a machine unusable.
+pub fn set_priority(pid: u32, level: &str, dry_run: bool) -> Result<PriorityReport> {
+    native_for(level)?;
+
+    if pid == 0 {
+        return Err(Error::Invalid(
+            "pid 0 is the scheduler itself on Unix, not a process to change".to_string(),
+        ));
+    }
+
+    if dry_run {
+        let (name, nice) = native_for(level)?;
+        return Ok(PriorityReport {
+            pid,
+            level: level.to_string(),
+            applied: false,
+            native: format!("{} ({} would be nice {})", name, level, nice),
+            detail: "dry run: nothing was changed".to_string(),
+        });
+    }
+
+    let native = apply(pid, level)?;
+    Ok(PriorityReport {
+        pid,
+        level: level.to_string(),
+        applied: true,
+        native,
+        detail: format!("process {} is now {}", pid, level),
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -443,6 +629,57 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
+
+
+    #[test]
+    fn every_documented_priority_maps() {
+        for level in PRIORITY_LEVELS {
+            assert!(native_for(level).is_ok(), "level '{}' should be valid", level);
+        }
+        assert!(native_for("urgent").is_err());
+    }
+
+    #[test]
+    fn niceness_runs_from_idle_up_to_realtime() {
+        let idle = native_for("idle").unwrap().1;
+        let normal = native_for("normal").unwrap().1;
+        let realtime = native_for("realtime").unwrap().1;
+        assert_eq!(normal, 0, "normal is zero on Unix");
+        assert!(idle > normal, "idle is a larger nice than normal");
+        assert!(realtime < normal, "realtime is a negative nice");
+    }
+
+    #[test]
+    fn the_levels_above_normal_need_privileges() {
+        assert!(!needs_privilege("idle"));
+        assert!(!needs_privilege("normal"));
+        assert!(needs_privilege("above-normal"));
+        assert!(needs_privilege("high"));
+        assert!(needs_privilege("realtime"));
+    }
+
+    #[test]
+    fn a_dry_run_reports_and_changes_nothing() {
+        // The current process, so the pid certainly exists.
+        let pid = std::process::id();
+        let report = set_priority(pid, "idle", true).unwrap();
+        assert_eq!(report.pid, pid);
+        assert!(!report.applied, "a dry run must not apply");
+        assert!(report.detail.contains("nothing was changed"));
+        assert!(report.native.contains("nice 19"));
+    }
+
+    #[test]
+    fn pid_zero_is_refused() {
+        assert!(set_priority(0, "normal", false).is_err());
+        assert!(set_priority(0, "normal", true).is_err());
+    }
+
+    #[test]
+    fn an_unknown_level_is_refused_before_anything_is_touched() {
+        let err = set_priority(std::process::id(), "urgent", false).unwrap_err();
+        assert!(err.to_string().contains("unknown priority"), "got: {}", err);
+    }
 
     #[test]
     fn reports_plausible_hardware() {

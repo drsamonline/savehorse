@@ -12,7 +12,7 @@ First release. Thirteen modules, one command line, one desktop app.
 
 - Thirteen module crates, one operation manifest, one shared runner, a CLI and a
   Tauri desktop app.
-- 86 of 87 operations ported and tested across Windows, macOS and Linux.
+- 87 of 87 operations ported and tested across Windows, macOS and Linux.
 - `savehorse ops`, generated from the manifest, which cannot drift from the code.
 - A static interface demo built from the real app, with outputs captured from
   actual test runs.
@@ -36,9 +36,6 @@ First release. Thirteen modules, one command line, one desktop app.
 
 ### Known gaps
 
-- `pulse priority`: changing a process's priority needs a privileged call on
-  every operating system, and a wrong implementation makes a machine unusable.
-  One operation out of eighty-seven.
 - `pager` on macOS: listing and switching windows work through `osascript`;
   snapping, moving, pinning and opacity do not. Windows and Linux have the full
   set.

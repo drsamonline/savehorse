@@ -235,9 +235,16 @@ jobs:
           # were ported.
           cargo run --quiet -- ops > ops.txt
           planned="$(awk '$2 == "planned" { print $1; exit }' ops.txt)"
-          echo "checking that ${planned} refuses"
-          if cargo run --quiet -- "${planned%%.*}" "${planned#*.}" 2>err.txt; then
-            echo "planned operation should have failed"
-            exit 1
+          if [ -n "${planned}" ]; then
+            echo "checking that ${planned} refuses"
+            if cargo run --quiet -- "${planned%%.*}" "${planned#*.}" 2>err.txt; then
+              echo "planned operation should have failed"
+              exit 1
+            fi
+            grep -q "not ported yet" err.txt
+          else
+            echo "every operation is ported; nothing left to refuse"
           fi
-          grep -q "not ported yet" err.txt
+
+          # pulse priority previews by default, so this changes nothing.
+          cargo run --quiet -- pulse priority $$ --level idle

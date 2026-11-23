@@ -653,6 +653,24 @@ const P_ARGS: Param = Param {
     options: &[],
 };
 
+const P_PID: Param = Param {
+    name: "pid",
+    kind: ParamKind::Number,
+    positional: true,
+    required: true,
+    help: "Process id, from `pulse procs`",
+    options: &[],
+};
+
+const P_LEVEL: Param = Param {
+    name: "level",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: true,
+    help: "Scheduling class",
+    options: &["idle", "below-normal", "normal", "above-normal", "high", "realtime"],
+};
+
 const P_FREQ: Param = Param {
     name: "frequency",
     kind: ParamKind::Number,
@@ -1218,6 +1236,7 @@ const PAGER_PIN: &[Param] = &[P_HANDLE, P_OFF];
 const PAGER_ROLLUP: &[Param] = &[P_HANDLE, P_HEIGHT_OPT];
 const PAGER_CALC: &[Param] = &[P_POSITION, P_SCREEN_W, P_SCREEN_H];
 const PAGER_LAUNCH: &[Param] = &[P_PROGRAM, P_ARGS];
+const P_PRIORITY: &[Param] = &[P_PID, P_LEVEL];
 
 // ---------------------------------------------------------------------------
 // The manifest
@@ -1327,7 +1346,7 @@ pub static OPS: &[Op] = &[
     Op { id: "pulse.hash", module: "pulse", name: "hash", summary: "CRC32 and SHA-256 of a file", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "pulse.temp", module: "pulse", name: "temp", summary: "Audit reclaimable temporary storage", danger: Danger::Safe, status: Status::Implemented, params: PULSE_TEMP },
     Op { id: "pulse.services", module: "pulse", name: "services", summary: "Audit background services", danger: Danger::Safe, status: Status::Implemented, params: &[] },
-    Op { id: "pulse.priority", module: "pulse", name: "priority", summary: "Change a process priority class",      danger: Danger::Destructive, status: Status::Planned, params: &[] },
+    Op { id: "pulse.priority", module: "pulse", name: "priority", summary: "Change a process priority class", danger: Danger::Destructive, status: Status::Implemented, params: P_PRIORITY },
 
     // -- pager -------------------------------------------------------------
     Op { id: "pager.list", module: "pager", name: "list", summary: "List visible top-level windows", danger: Danger::Safe, status: Status::Implemented, params: &[] },
@@ -1398,7 +1417,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 87, "88 declared, minus glyph.search which sift.search supersedes");
-        assert_eq!(implemented, 86, "everything except pulse priority");
+        assert_eq!(implemented, 87, "every operation in the manifest");
     }
 
     #[test]

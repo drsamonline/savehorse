@@ -13,3 +13,7 @@ savehorse-core.workspace = true
 serde.workspace = true
 sha2.workspace = true
 sysinfo = { version = "0.40", default-features = false, features = ["system", "disk"] }
+
+# setpriority(2) for the priority operation.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
