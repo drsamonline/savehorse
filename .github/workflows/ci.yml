@@ -53,27 +53,18 @@ jobs:
       - name: Test
         run: cargo test --workspace --verbose
 
-      # Report only for now: it tells us whether the committed captures still
-      # match what the tool prints, without failing the build on the first run.
-      - name: Are the demo's captured outputs current?
+      # The demo replays these captures. Nothing regenerated them before, so a
+      # change to any of those operations' output left the demo showing stale
+      # text with every test green.
+      - name: The demo's captured outputs are current
         shell: bash
-        continue-on-error: true
         run: |
           bash scripts/capture_demo.sh /tmp/captured.json
-          if diff -u scripts/demo-captured.json /tmp/captured.json; then
-            echo "captured outputs match"
-          else
-            echo "::warning::scripts/demo-captured.json differs from a fresh capture"
-            cp /tmp/captured.json captured-diff.json
+          if ! diff -u scripts/demo-captured.json /tmp/captured.json; then
+            echo "::error::scripts/demo-captured.json is stale. Run scripts/capture_demo.sh and commit the result."
+            exit 1
           fi
-
-      - name: Keep the fresh capture for inspection
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: demo-captured-fresh
-          path: captured-diff.json
-          if-no-files-found: ignore
+          echo "captured outputs match"
 
       - name: Smoke test the CLI
         shell: bash
