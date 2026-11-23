@@ -176,6 +176,69 @@ const P_GLOB: Param = Param {
     options: &[],
 };
 
+const P_INPUT: Param = Param {
+    name: "input",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "File to read",
+    options: &[],
+};
+
+const P_SOURCE: Param = Param {
+    name: "source",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "Directory or file to read from",
+    options: &[],
+};
+
+const P_IMAGE: Param = Param {
+    name: "image",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "Disc image to read",
+    options: &[],
+};
+
+const P_OUT: Param = Param {
+    name: "out",
+    kind: ParamKind::Path,
+    positional: false,
+    required: true,
+    help: "Where to write the result",
+    options: &[],
+};
+
+const P_TITLE: Param = Param {
+    name: "title",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Document title",
+    options: &[],
+};
+
+const P_VOLUME_ID: Param = Param {
+    name: "volume-id",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Volume identifier stored in the image (default SAVEHORSE)",
+    options: &[],
+};
+
+const P_FILTER: Param = Param {
+    name: "filter",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Only extract names matching this pattern",
+    options: &[],
+};
+
 const P_IGNORE_CASE: Param = Param {
     name: "ignore-case",
     kind: ParamKind::Bool,
@@ -312,6 +375,29 @@ const SCOUT_CLEAN: &[Param] = &[
     P_EXT,
 ];
 
+
+// ---------------------------------------------------------------------------
+// glyph — Documents
+// ---------------------------------------------------------------------------
+
+const GLYPH_PDF: &[Param] = &[P_INPUT, P_OUT, P_TITLE];
+
+const GLYPH_MARKDOWN: &[Param] = &[P_INPUT, P_OUT, P_TITLE];
+
+// ---------------------------------------------------------------------------
+// halo — Disc Studio
+// ---------------------------------------------------------------------------
+
+const HALO_CREATE: &[Param] = &[P_SOURCE, P_OUT, P_VOLUME_ID];
+
+const HALO_EXTRACT: &[Param] = &[P_IMAGE, P_OUT, P_FILTER];
+
+const HALO_CONVERT: &[Param] = &[P_SOURCE, P_OUT];
+
+// One positional path, under the name the operation calls it.
+const P_PATH_ONE: &[Param] = &[P_PATH];
+const HALO_IMAGE_ONE: &[Param] = &[P_IMAGE];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -352,11 +438,11 @@ pub static OPS: &[Op] = &[
     Op { id: "forge.patch",    module: "forge", name: "patch",    summary: "Overwrite bytes at an offset",                     danger: Danger::Irreversible, status: Status::Planned, params: &[] },
 
     // -- halo --------------------------------------------------------------
-    Op { id: "halo.create",  module: "halo", name: "create",  summary: "Build an ISO 9660 image from a directory",      danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "halo.list",    module: "halo", name: "list",    summary: "List the contents of a disc image",             danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "halo.extract", module: "halo", name: "extract", summary: "Extract every file from a disc image",          danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "halo.verify",  module: "halo", name: "verify",  summary: "Check volume descriptors and checksums",        danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "halo.convert", module: "halo", name: "convert", summary: "Convert raw 2352-byte sectors to 2048-byte ISO",danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "halo.create", module: "halo", name: "create", summary: "Build an ISO 9660 image from a directory", danger: Danger::Safe, status: Status::Implemented, params: HALO_CREATE },
+    Op { id: "halo.list", module: "halo", name: "list", summary: "List the contents of a disc image", danger: Danger::Safe, status: Status::Implemented, params: HALO_IMAGE_ONE },
+    Op { id: "halo.extract", module: "halo", name: "extract", summary: "Extract every file from a disc image", danger: Danger::Safe, status: Status::Implemented, params: HALO_EXTRACT },
+    Op { id: "halo.verify", module: "halo", name: "verify", summary: "Check volume descriptors and checksums", danger: Danger::Safe, status: Status::Implemented, params: HALO_IMAGE_ONE },
+    Op { id: "halo.convert", module: "halo", name: "convert", summary: "Convert raw 2352-byte sectors to 2048-byte ISO", danger: Danger::Safe, status: Status::Implemented, params: HALO_CONVERT },
     Op { id: "halo.cue",     module: "halo", name: "cue",     summary: "Write a CUE sheet for a disc image",            danger: Danger::Safe, status: Status::Planned, params: &[] },
     Op { id: "halo.cover",   module: "halo", name: "cover",   summary: "Generate disc label and case artwork",          danger: Danger::Safe, status: Status::Planned, params: &[] },
 
@@ -394,12 +480,12 @@ pub static OPS: &[Op] = &[
     Op { id: "sift.convert", module: "sift", name: "convert", summary: "Convert text between encodings",                 danger: Danger::Safe,         status: Status::Planned,     params: &[] },
 
     // -- glyph -------------------------------------------------------------
-    Op { id: "glyph.pdf",         module: "glyph", name: "pdf",         summary: "Generate a PDF from text",                  danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "glyph.extract",     module: "glyph", name: "extract",     summary: "Pull text out of a PDF",                    danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "glyph.markdown",    module: "glyph", name: "markdown",    summary: "Render Markdown to styled HTML",            danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "glyph.encoding",    module: "glyph", name: "encoding",    summary: "Detect encoding and line endings",          danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "glyph.readability", module: "glyph", name: "readability", summary: "Word count, reading time, readability",     danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "glyph.metrics",     module: "glyph", name: "metrics",     summary: "Code lines, comments, blanks, density",     danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "glyph.pdf", module: "glyph", name: "pdf", summary: "Generate a PDF from text", danger: Danger::Safe, status: Status::Implemented, params: GLYPH_PDF },
+    Op { id: "glyph.extract", module: "glyph", name: "extract", summary: "Pull text out of a PDF", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "glyph.markdown", module: "glyph", name: "markdown", summary: "Render Markdown to styled HTML", danger: Danger::Safe, status: Status::Implemented, params: GLYPH_MARKDOWN },
+    Op { id: "glyph.encoding", module: "glyph", name: "encoding", summary: "Detect encoding and line endings", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "glyph.readability", module: "glyph", name: "readability", summary: "Word count, reading time, readability", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "glyph.metrics", module: "glyph", name: "metrics", summary: "Code lines, comments, blanks, density", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "glyph.search",      module: "glyph", name: "search",      summary: "Search a document for text",                danger: Danger::Safe, status: Status::Planned, params: &[] },
 
     // -- scout -------------------------------------------------------------
@@ -492,7 +578,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 88, "the plan promises 88 operations");
-        assert_eq!(implemented, 7, "sift x4 and scout x3 are ported so far");
+        assert_eq!(implemented, 18, "sift x4, scout x3, glyph x6, halo x5 are ported");
     }
 
     #[test]

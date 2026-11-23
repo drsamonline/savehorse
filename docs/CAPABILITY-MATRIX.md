@@ -48,13 +48,28 @@ these operations.
 From `halo` (gen 2) and `optic` (gen 1). `optic` is the superset: it also wrote
 CUE sheets and cover artwork.
 
+**Porting note — three defects fixed, not carried forward.** The gen 2 writer
+produced images that looked right and were not:
+
+1. The volume descriptor claimed a 10-byte path table at sector 18, which was
+   where the root directory actually lived. No path table was ever written. A
+   real L and M path table now exist and the descriptor points at them.
+2. `create` walked one level and packed only top-level files, silently leaving
+   out every subdirectory. It now refuses with an error rather than producing
+   an image that looks complete.
+3. File records that did not fit in the single root-directory sector were
+   dropped with a `break`. It now errors, naming the limit.
+
+Two source files that sanitise to the same ISO name are also disambiguated now
+instead of colliding.
+
 | Operation | What it does | Status |
 |---|---|---|
-| `halo.create` | Build an ISO 9660 image | planned |
-| `halo.list` | List a disc image | planned |
-| `halo.extract` | Extract every file | planned |
-| `halo.verify` | Volume descriptors and checksums | planned |
-| `halo.convert` | Raw 2352-byte sectors to 2048-byte ISO | planned |
+| `halo.create` | Build an ISO 9660 image | **ready** |
+| `halo.list` | List a disc image | **ready** |
+| `halo.extract` | Extract every file | **ready** |
+| `halo.verify` | Volume descriptors and checksums | **ready** |
+| `halo.convert` | Raw 2352-byte sectors to 2048-byte ISO | **ready** |
 | `halo.cue` | Write a CUE sheet | planned |
 | `halo.cover` | Disc label and case artwork | planned |
 
@@ -120,15 +135,20 @@ gains an `--archives` flag.
 
 From `glyph` (gen 1).
 
+**Porting note.** `glyph.search` is not ported: it was a substring scan over a
+single file, which `sift.search` already does with line numbers, regex and glob
+filters. Keeping both would mean two implementations of one idea, one of them
+weaker. It is marked *superseded* rather than *planned*.
+
 | Operation | What it does | Status |
 |---|---|---|
-| `glyph.pdf` | Generate a PDF from text | planned |
-| `glyph.extract` | Pull text out of a PDF | planned |
-| `glyph.markdown` | Markdown to styled HTML | planned |
-| `glyph.encoding` | Detect encoding and line endings | planned |
-| `glyph.readability` | Word count, reading time, readability | planned |
-| `glyph.metrics` | Code lines, comments, blanks | planned |
-| `glyph.search` | Search a document | planned |
+| `glyph.pdf` | Generate a PDF from text | **ready** |
+| `glyph.extract` | Pull text out of a PDF | **ready** |
+| `glyph.markdown` | Markdown to styled HTML | **ready** |
+| `glyph.encoding` | Detect encoding and line endings | **ready** |
+| `glyph.readability` | Word count, reading time, readability | **ready** |
+| `glyph.metrics` | Code lines, comments, blanks | **ready** |
+| `glyph.search` | Search a document | superseded |
 
 ## scout — Filesystem
 
@@ -232,8 +252,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ready | 7 |
-| Operations planned | 81 |
+| Operations ready | 18 |
+| Operations planned | 70 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

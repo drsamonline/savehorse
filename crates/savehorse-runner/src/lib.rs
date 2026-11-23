@@ -5,7 +5,8 @@
 //! drift apart.
 
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use savehorse_core::{Error, Result};
 use savehorse_registry as registry;
@@ -148,6 +149,17 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "scout.catalog" => scout_catalog(req),
         "scout.duplicates" => scout_duplicates(req),
         "scout.clean" => scout_clean(req),
+        "glyph.pdf" => glyph_pdf(req),
+        "glyph.extract" => glyph_extract(req),
+        "glyph.markdown" => glyph_markdown(req),
+        "glyph.encoding" => glyph_encoding(req),
+        "glyph.readability" => glyph_readability(req),
+        "glyph.metrics" => glyph_metrics(req),
+        "halo.create" => halo_create(req),
+        "halo.list" => halo_list(req),
+        "halo.extract" => halo_extract(req),
+        "halo.verify" => halo_verify(req),
+        "halo.convert" => halo_convert(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -367,6 +379,226 @@ fn scout_clean(req: &Request) -> Result<Outcome> {
         result = result.preview();
     }
     Ok(result)
+}
+
+
+// ---------------------------------------------------------------------------
+// glyph
+// ---------------------------------------------------------------------------
+
+fn required_value<'a>(req: &'a Request, name: &str) -> Result<&'a str> {
+    match req.value(name) {
+        Some(v) if !v.trim().is_empty() => Ok(v),
+        _ => Err(Error::Invalid(format!("--{} is required", name))),
+    }
+}
+
+fn glyph_pdf(req: &Request) -> Result<Outcome> {
+    let input = PathBuf::from(req.position(0, "input")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let title = req.value("title").unwrap_or("Untitled");
+
+    let text = fs::read_to_string(&input)
+        .map_err(|e| Error::Invalid(format!("{}: {}", input.display(), e)))?;
+    let lines: Vec<String> = text.lines().map(|l| l.to_string()).collect();
+
+    let report = savehorse_glyph::create_pdf(title, &lines, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "wrote '{}' — {} byte(s), {} line(s), title \"{}\"\n",
+            report.file_path, report.bytes_written, report.lines, report.title
+        ),
+        to_json(&report)?,
+    ))
+}
+
+fn glyph_extract(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let report = savehorse_glyph::extract_pdf_text(&path)?;
+
+    let mut text = report.extracted_text.clone();
+    text.push_str(&format!(
+        "\n-- {} page(s), {} line(s) extracted\n",
+        report.total_pages, report.lines_count
+    ));
+
+    Ok(Outcome::new(text, to_json(&report)?))
+}
+
+fn glyph_markdown(req: &Request) -> Result<Outcome> {
+    let input = PathBuf::from(req.position(0, "input")?);
+    let title = req.value("title").unwrap_or("Document");
+
+    let md = fs::read_to_string(&input)
+        .map_err(|e| Error::Invalid(format!("{}: {}", input.display(), e)))?;
+    let html = savehorse_glyph::compile_markdown_to_html(&md, title);
+
+    match req.value("out") {
+        Some(dest) if !dest.trim().is_empty() => {
+            fs::write(dest, &html)?;
+            Ok(Outcome::new(
+                format!("wrote '{}' — {} byte(s)\n", dest, html.len()),
+                serde_json::json!({ "output_file": dest, "bytes": html.len() }).to_string(),
+            ))
+        }
+        _ => Ok(Outcome::new(
+            format!("{}\n", html),
+            serde_json::json!({ "html": html }).to_string(),
+        )),
+    }
+}
+
+fn glyph_encoding(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_glyph::inspect_encoding(&path)?;
+
+    let text = format!(
+        "file       {}\nencoding   {}\nbom        {}\nendings    {} (CRLF {}, LF {})\n",
+        r.file_path, r.detected_encoding, r.has_bom, r.line_terminator, r.crlf_count, r.lf_count
+    );
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn glyph_readability(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_glyph::analyze_file_readability(&path)?;
+
+    let text = format!(
+        "words      {}\ncharacters {}\nsentences  {}\navg word   {}\nreading    ~{} min at 200 wpm\n",
+        r.total_words,
+        r.total_characters,
+        r.total_sentences,
+        r.average_word_length,
+        r.estimated_reading_time_mins
+    );
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn glyph_metrics(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_glyph::analyze_code_metrics(&path)?;
+
+    let text = format!(
+        "file       {}\ntotal      {}\ncode       {}\ncomments   {} ({}%)\nblank      {}\ncharacters {}\n",
+        r.file_path,
+        r.total_lines,
+        r.code_lines,
+        r.comment_lines,
+        r.comment_ratio_percent,
+        r.blank_lines,
+        r.character_count
+    );
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+// ---------------------------------------------------------------------------
+// halo
+// ---------------------------------------------------------------------------
+
+fn halo_create(req: &Request) -> Result<Outcome> {
+    let source = PathBuf::from(req.position(0, "source")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let volume_id = req.value("volume-id").unwrap_or("SAVEHORSE");
+
+    let report = savehorse_halo::create_image(&source, &out, volume_id)?;
+
+    let mut text = format!(
+        "created '{}' — {} file(s), {} sector(s), {} byte(s), volume '{}'\n",
+        report.image_path,
+        report.files_count,
+        report.total_sectors,
+        report.bytes_written,
+        report.volume_id
+    );
+    for e in &report.entries {
+        text.push_str(&format!(
+            "  {:<28} sector {:<8} {} byte(s)\n",
+            e.name, e.extent_sector, e.size_bytes
+        ));
+    }
+
+    Ok(Outcome::new(text, to_json(&report)?))
+}
+
+fn halo_list(req: &Request) -> Result<Outcome> {
+    let image = PathBuf::from(req.position(0, "image")?);
+    let info = savehorse_halo::read_metadata(&image)?;
+
+    let mut text = format!(
+        "image      {}\nvolume     {}\nsectors    {} ({} KB)\n\n{:<28} {:<10} {}\n{}\n",
+        image.display(),
+        info.volume_id,
+        info.total_sectors,
+        info.total_sectors * 2,
+        "NAME",
+        "SECTOR",
+        "BYTES",
+        "-".repeat(56)
+    );
+    for e in &info.entries {
+        text.push_str(&format!(
+            "{:<28} {:<10} {}\n",
+            e.name, e.extent_sector, e.size_bytes
+        ));
+    }
+    text.push_str(&format!("{}\n{} file(s)\n", "-".repeat(56), info.entries.len()));
+
+    Ok(Outcome::new(text, to_json(&info)?))
+}
+
+fn halo_extract(req: &Request) -> Result<Outcome> {
+    let image = PathBuf::from(req.position(0, "image")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+
+    let report = savehorse_halo::extract_image(&image, &out, req.value("filter"))?;
+
+    let mut text = format!(
+        "extracted {} file(s) from '{}' to '{}'\n",
+        report.extracted.len(),
+        report.image_path,
+        report.output_dir
+    );
+    for e in &report.extracted {
+        text.push_str(&format!("  {}\n", e.name));
+    }
+
+    Ok(Outcome::new(text, to_json(&report)?))
+}
+
+fn halo_verify(req: &Request) -> Result<Outcome> {
+    let image = PathBuf::from(req.position(0, "image")?);
+    let r = savehorse_halo::verify_image(&image)?;
+
+    let mut text = if r.valid {
+        format!("OK '{}' is a valid ISO 9660 image\n", image.display())
+    } else {
+        format!("FAILED '{}' has problems\n", image.display())
+    };
+    text.push_str(&format!(
+        "volume     {}\nsectors    {}\nfiles      {}\n{}\n",
+        r.volume_id, r.total_sectors, r.files_count, r.message
+    ));
+    for issue in &r.issues {
+        text.push_str(&format!("  ! {}\n", issue));
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn halo_convert(req: &Request) -> Result<Outcome> {
+    let source = PathBuf::from(req.position(0, "source")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+
+    let r = savehorse_halo::convert_raw_to_iso(&source, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "converted '{}' -> '{}' ({} raw sector(s) -> {} byte(s))\n",
+            r.source_file, r.output_file, r.source_sectors, r.output_bytes
+        ),
+        to_json(&r)?,
+    ))
 }
 
 // ---------------------------------------------------------------------------

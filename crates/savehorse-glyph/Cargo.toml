@@ -1,0 +1,13 @@
+[package]
+name = "savehorse-glyph"
+description = "Documents: generate and read PDFs, render Markdown, measure text and detect encoding."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+savehorse-core.workspace = true
+serde.workspace = true

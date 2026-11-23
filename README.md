@@ -18,8 +18,8 @@ Early. This is the spine, not the finished product.
 |---|---|
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ported | 7 — `sift` ×4, `scout` ×3 |
-| GUI | Tauri 2 + React shell, 7 operations wired |
+| Operations ported | 18 — `sift` ×4, `scout` ×3, `glyph` ×6, `halo` ×5 |
+| GUI | Tauri 2 + React shell |
 | Platforms | Windows, macOS, Linux |
 
 Every operation is declared in the manifest whether or not it is ported yet, and

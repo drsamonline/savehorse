@@ -59,3 +59,33 @@ jobs:
           cargo run --quiet -- scout catalog smoke --format json
           cargo run --quiet -- scout duplicates smoke
           cargo run --quiet -- scout clean smoke
+
+          # glyph
+          printf '# Title\n\nSome **bold** text.\n\n- one\n- two\n' > smoke/doc.md
+          cargo run --quiet -- glyph markdown smoke/doc.md --out smoke/doc.html
+          test -s smoke/doc.html
+          printf 'first line\nsecond line\n' > smoke/text.txt
+          cargo run --quiet -- glyph pdf smoke/text.txt --out smoke/text.pdf --title "Smoke Test"
+          test -s smoke/text.pdf
+          cargo run --quiet -- glyph extract smoke/text.pdf
+          cargo run --quiet -- glyph encoding smoke/text.txt
+          cargo run --quiet -- glyph readability smoke/text.txt
+          cargo run --quiet -- glyph metrics smoke/text.txt
+
+          # halo
+          mkdir -p smoke/iso
+          printf 'hello iso\n' > smoke/iso/readme.txt
+          printf 'payload\n' > smoke/iso/notes.txt
+          cargo run --quiet -- halo create smoke/iso --out smoke/test.iso --volume-id SMOKE
+          cargo run --quiet -- halo list smoke/test.iso
+          cargo run --quiet -- halo verify smoke/test.iso
+          cargo run --quiet -- halo extract smoke/test.iso --out smoke/extracted
+          test -f smoke/extracted/README.TXT
+          grep -q 'hello iso' smoke/extracted/README.TXT
+
+          # a planned operation must refuse, and say why
+          if cargo run --quiet -- aegis shred smoke/text.txt 2>err.txt; then
+            echo "planned operation should have failed"
+            exit 1
+          fi
+          grep -q "not ported yet" err.txt
