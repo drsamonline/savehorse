@@ -342,9 +342,25 @@ actually stored, not what you asked for.
 
 ### pager — window manager
 
-Nothing here yet. Nine operations for snapping, pinning and arranging windows
-are declared and will refuse if you try them. This is the one module that needs
-a resident process and per-platform window APIs, so it is last.
+`list`, `switch`, `rollup`, `pin`, `alpha`, `snap`, `move`, `launch`, `calc`
+
+Lists windows, brings one to the front, snaps it to a half or corner, moves it to
+exact coordinates, pins it above others, changes its opacity, shades it to the
+title bar, and starts a program.
+
+This module is the one that cannot be the same everywhere. On Windows it is
+Win32 throughout. On Linux it drives `wmctrl`, so you need that installed. On
+macOS only listing and switching work, through `osascript`, and the terminal
+needs Accessibility permission.
+
+`calc` needs none of that: it is arithmetic. Work out where a window would land
+before letting anything move it.
+
+```sh
+savehorse pager calc --position left --width 1920 --height 1080
+savehorse pager list
+savehorse pager snap 0x1A2B3C --position right
+```
 
 ---
 
@@ -404,8 +420,8 @@ default to preview when you ask for one.
 
 ## What is not finished
 
-77 of 87 operations are ported and tested. The ten that are not are
-`pulse priority` (one) and `pager` (nine). Everything else runs.
+86 of 87 operations are ported and tested. The one that is not is
+`pulse priority`. Everything else runs.
 
 `savehorse ops` is the authoritative list, and it is generated from the same
 manifest the program runs from, so it cannot drift out of date.

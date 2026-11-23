@@ -23,5 +23,6 @@ savehorse-morph.workspace = true
 savehorse-aegis.workspace = true
 savehorse-pulse.workspace = true
 savehorse-flux.workspace = true
+savehorse-pager.workspace = true
 serde.workspace = true
 serde_json.workspace = true

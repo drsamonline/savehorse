@@ -554,6 +554,105 @@ const P_PATH_OPT: Param = Param {
     options: &[],
 };
 
+const P_HANDLE: Param = Param {
+    name: "handle",
+    kind: ParamKind::Text,
+    positional: true,
+    required: true,
+    help: "Window handle from `pager list`",
+    options: &[],
+};
+
+const P_POSITION: Param = Param {
+    name: "position",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: true,
+    help: "Where to put the window",
+    options: &["left", "right", "top", "bottom", "center", "max"],
+};
+
+const P_PERCENT: Param = Param {
+    name: "percent",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Opacity, 0 to 100",
+    options: &[],
+};
+
+const P_OFF: Param = Param {
+    name: "off",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Remove the always-on-top flag instead of setting it",
+    options: &[],
+};
+
+const P_X: Param = Param {
+    name: "x",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Left edge in screen coordinates",
+    options: &[],
+};
+
+const P_Y: Param = Param {
+    name: "y",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Top edge in screen coordinates",
+    options: &[],
+};
+
+const P_HEIGHT_OPT: Param = Param {
+    name: "height",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Height to set (default 24, the title bar)",
+    options: &[],
+};
+
+const P_SCREEN_W: Param = Param {
+    name: "width",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Work area width (default 1920)",
+    options: &[],
+};
+
+const P_SCREEN_H: Param = Param {
+    name: "height",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Work area height (default 1080)",
+    options: &[],
+};
+
+const P_PROGRAM: Param = Param {
+    name: "program",
+    kind: ParamKind::Text,
+    positional: true,
+    required: true,
+    help: "Executable to start",
+    options: &[],
+};
+
+const P_ARGS: Param = Param {
+    name: "args",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Space-separated arguments for the program",
+    options: &[],
+};
+
 const P_FREQ: Param = Param {
     name: "frequency",
     kind: ParamKind::Number,
@@ -994,6 +1093,7 @@ const HALO_IMAGE_ONE: &[Param] = &[P_IMAGE];
 const ARC_ONE: &[Param] = &[P_ARCHIVE];
 const P_JOURNAL_REQ_ONE: &[Param] = &[P_JOURNAL_REQ];
 const P_TOP_ONE: &[Param] = &[P_TOP];
+const P_HANDLE_ONE: &[Param] = &[P_HANDLE];
 
 
 // ---------------------------------------------------------------------------
@@ -1106,6 +1206,19 @@ const FLUX_SYNTH: &[Param] = &[P_OUT, P_FREQ, P_SECONDS, P_RATE, P_CHANNELS, P_V
 const FLUX_TAG: &[Param] = &[P_PATH, P_TITLE, P_ARTIST, P_ALBUM, P_YEAR];
 const FLUX_GAIN: &[Param] = &[P_PATH, P_OUT, P_GAIN];
 
+
+// ---------------------------------------------------------------------------
+// pager — Window Manager
+// ---------------------------------------------------------------------------
+
+const PAGER_SNAP: &[Param] = &[P_HANDLE, P_POSITION];
+const PAGER_MOVE: &[Param] = &[P_HANDLE, P_X, P_Y, P_WIDTH, P_HEIGHT];
+const PAGER_ALPHA: &[Param] = &[P_HANDLE, P_PERCENT];
+const PAGER_PIN: &[Param] = &[P_HANDLE, P_OFF];
+const PAGER_ROLLUP: &[Param] = &[P_HANDLE, P_HEIGHT_OPT];
+const PAGER_CALC: &[Param] = &[P_POSITION, P_SCREEN_W, P_SCREEN_H];
+const PAGER_LAUNCH: &[Param] = &[P_PROGRAM, P_ARGS];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -1217,15 +1330,15 @@ pub static OPS: &[Op] = &[
     Op { id: "pulse.priority", module: "pulse", name: "priority", summary: "Change a process priority class",      danger: Danger::Destructive, status: Status::Planned, params: &[] },
 
     // -- pager -------------------------------------------------------------
-    Op { id: "pager.list",   module: "pager", name: "list",   summary: "List visible top-level windows",      danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.switch", module: "pager", name: "switch", summary: "Switch virtual desktop",               danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.rollup", module: "pager", name: "rollup", summary: "Shade a window to its title bar",      danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.pin",    module: "pager", name: "pin",    summary: "Keep a window above others",           danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.alpha",  module: "pager", name: "alpha",  summary: "Set window transparency",              danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.snap",   module: "pager", name: "snap",   summary: "Snap a window to a grid region",       danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.move",   module: "pager", name: "move",   summary: "Move a window to a position or screen",danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.launch", module: "pager", name: "launch", summary: "Start an application detached",        danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "pager.calc",   module: "pager", name: "calc",   summary: "Compute grid snap bounds",             danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "pager.list", module: "pager", name: "list", summary: "List visible top-level windows", danger: Danger::Safe, status: Status::Implemented, params: &[] },
+    Op { id: "pager.switch", module: "pager", name: "switch", summary: "Switch virtual desktop", danger: Danger::Safe, status: Status::Implemented, params: P_HANDLE_ONE },
+    Op { id: "pager.rollup", module: "pager", name: "rollup", summary: "Shade a window to its title bar", danger: Danger::Safe, status: Status::Implemented, params: PAGER_ROLLUP },
+    Op { id: "pager.pin", module: "pager", name: "pin", summary: "Keep a window above others", danger: Danger::Safe, status: Status::Implemented, params: PAGER_PIN },
+    Op { id: "pager.alpha", module: "pager", name: "alpha", summary: "Set window transparency", danger: Danger::Safe, status: Status::Implemented, params: PAGER_ALPHA },
+    Op { id: "pager.snap", module: "pager", name: "snap", summary: "Snap a window to a grid region", danger: Danger::Safe, status: Status::Implemented, params: PAGER_SNAP },
+    Op { id: "pager.move", module: "pager", name: "move", summary: "Move a window to a position or screen", danger: Danger::Safe, status: Status::Implemented, params: PAGER_MOVE },
+    Op { id: "pager.launch", module: "pager", name: "launch", summary: "Start an application detached", danger: Danger::Safe, status: Status::Implemented, params: PAGER_LAUNCH },
+    Op { id: "pager.calc", module: "pager", name: "calc", summary: "Compute grid snap bounds", danger: Danger::Safe, status: Status::Implemented, params: PAGER_CALC },
 
     // -- revive ------------------------------------------------------------
     Op { id: "revive.scan", module: "revive", name: "scan", summary: "Scan an image for recoverable files", danger: Danger::Safe, status: Status::Implemented, params: REVIVE_SCAN },
@@ -1285,7 +1398,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 87, "88 declared, minus glyph.search which sift.search supersedes");
-        assert_eq!(implemented, 77, "everything except the window operations and process priority");
+        assert_eq!(implemented, 86, "everything except pulse priority");
     }
 
     #[test]
@@ -1331,7 +1444,10 @@ mod tests {
         for o in OPS.iter().filter(|o| o.status == Status::Implemented) {
             // aegis.persistence takes no arguments: it audits a fixed set of
             // platform locations. Every other operation must declare something.
-            if !matches!(o.id, "aegis.persistence" | "pulse.hardware" | "pulse.drives" | "pulse.services") {
+            if !matches!(
+                o.id,
+                "aegis.persistence" | "pulse.hardware" | "pulse.drives" | "pulse.services" | "pager.list"
+            ) {
                 assert!(!o.params.is_empty(), "{} is implemented but declares no parameters", o.id);
             }
             // Not every operation takes a positional argument: `arc chunk`

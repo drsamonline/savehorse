@@ -232,6 +232,15 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "flux.synth" => flux_synth(req),
         "flux.tag" => flux_tag(req),
         "flux.gain" => flux_gain(req),
+        "pager.list" => pager_list(req),
+        "pager.switch" => pager_switch(req),
+        "pager.rollup" => pager_rollup(req),
+        "pager.pin" => pager_pin(req),
+        "pager.alpha" => pager_alpha(req),
+        "pager.snap" => pager_snap(req),
+        "pager.move" => pager_move(req),
+        "pager.launch" => pager_launch(req),
+        "pager.calc" => pager_calc(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -1920,6 +1929,169 @@ fn pulse_services(_req: &Request) -> Result<Outcome> {
     text.push_str("\nread-only: nothing was started, stopped or enabled\n");
 
     Ok(Outcome::new(text, to_json(&r)?))
+}
+
+
+// ---------------------------------------------------------------------------
+// pager
+// ---------------------------------------------------------------------------
+
+fn pager_list(_req: &Request) -> Result<Outcome> {
+    let windows = savehorse_pager::list_windows()?;
+
+    let mut text = format!(
+        "{} window(s) on {}\n\n{:<14} {:>6} {:>6} {:>6} {:>6}  {}\n{}\n",
+        windows.len(),
+        std::env::consts::OS,
+        "HANDLE", "X", "Y", "W", "H", "TITLE", "-".repeat(72)
+    );
+    for w in &windows {
+        text.push_str(&format!(
+            "{:<14} {:>6} {:>6} {:>6} {:>6}  {}\n",
+            w.handle,
+            w.rect.left,
+            w.rect.top,
+            w.rect.width(),
+            w.rect.height(),
+            w.title.chars().take(44).collect::<String>()
+        ));
+    }
+    if windows.is_empty() {
+        text.push_str("no windows found\n");
+    }
+
+    Ok(Outcome::new(text, to_json(&windows)?))
+}
+
+fn pager_switch(req: &Request) -> Result<Outcome> {
+    let handle = req.position(0, "handle")?;
+    let r = savehorse_pager::switch(handle)?;
+    Ok(Outcome::new(
+        format!("{} ({}) — {}\n", r.handle, r.action, r.detail),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_rollup(req: &Request) -> Result<Outcome> {
+    let handle = req.position(0, "handle")?;
+    let height = req.number("height")?.unwrap_or(24) as i32;
+    let r = savehorse_pager::rollup(handle, height)?;
+    Ok(Outcome::new(
+        format!("{} — {} ({})\n", r.handle, r.detail, r.backend),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_pin(req: &Request) -> Result<Outcome> {
+    let handle = req.position(0, "handle")?;
+    let r = savehorse_pager::pin(handle, !req.has("off"))?;
+    Ok(Outcome::new(
+        format!("{} — {} ({})\n", r.handle, r.detail, r.backend),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_alpha(req: &Request) -> Result<Outcome> {
+    let handle = req.position(0, "handle")?;
+    let percent = req
+        .number("percent")?
+        .ok_or_else(|| Error::Invalid("--percent is required, 0 to 100".to_string()))?;
+    let r = savehorse_pager::set_alpha(handle, percent.min(100) as u8)?;
+    Ok(Outcome::new(
+        format!("{} — {} ({})\n", r.handle, r.detail, r.backend),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_snap(req: &Request) -> Result<Outcome> {
+    let handle = req.position(0, "handle")?;
+    let position = required_value(req, "position")?;
+    let r = savehorse_pager::snap(handle, position)?;
+
+    Ok(Outcome::new(
+        format!(
+            "{} snapped {} — {},{} {}x{} ({})\n",
+            r.handle,
+            r.position,
+            r.rect.left,
+            r.rect.top,
+            r.rect.width(),
+            r.rect.height(),
+            r.backend
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_move(req: &Request) -> Result<Outcome> {
+    let handle = req.position(0, "handle")?;
+    let x = req.number("x")?.unwrap_or(0) as i32;
+    let y = req.number("y")?.unwrap_or(0) as i32;
+    let width = req.number("width")?.unwrap_or(800) as i32;
+    let height = req.number("height")?.unwrap_or(600) as i32;
+
+    let rect = savehorse_pager::Rect {
+        left: x,
+        top: y,
+        right: x + width,
+        bottom: y + height,
+    };
+    let r = savehorse_pager::move_window(handle, rect)?;
+
+    Ok(Outcome::new(
+        format!(
+            "{} moved to {},{} {}x{} ({})\n",
+            r.handle,
+            r.rect.left,
+            r.rect.top,
+            r.rect.width(),
+            r.rect.height(),
+            r.backend
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_launch(req: &Request) -> Result<Outcome> {
+    let program = req.position(0, "program")?;
+    let args: Vec<String> = req
+        .value("args")
+        .map(|a| a.split_whitespace().map(|s| s.to_string()).collect())
+        .unwrap_or_default();
+
+    let r = savehorse_pager::launch(program, &args)?;
+
+    Ok(Outcome::new(
+        format!("started '{}' as pid {}\n", r.program, r.pid),
+        to_json(&r)?,
+    ))
+}
+
+fn pager_calc(req: &Request) -> Result<Outcome> {
+    let position = required_value(req, "position")?;
+    let width = req.number("width")?.unwrap_or(1920) as i32;
+    let height = req.number("height")?.unwrap_or(1080) as i32;
+
+    let work = savehorse_pager::Rect {
+        left: 0,
+        top: 0,
+        right: width,
+        bottom: height,
+    };
+    let rect = savehorse_pager::snap_rect(position, work)?;
+
+    let text = format!(
+        "{} in a {}x{} work area\n  left {}  top {}  width {}  height {}\n  (arithmetic only: no window was touched)\n",
+        position,
+        width,
+        height,
+        rect.left,
+        rect.top,
+        rect.width(),
+        rect.height()
+    );
+
+    Ok(Outcome::new(text, to_json(&rect)?))
 }
 
 // ---------------------------------------------------------------------------

@@ -245,6 +245,21 @@ From `pulse` (gen 2) and `beacon` (gen 1).
 
 From `pager` (gen 2) and `dock` (gen 1).
 
+**Porting note — this is the one module that cannot be portable.** Enumerating
+and moving other applications' windows is a different API on every desktop, so
+each platform gets its own backend: Win32 on Windows, `wmctrl` on Linux,
+`osascript` on macOS. What each can do:
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| list, switch, snap, move, pin | yes | yes (needs `wmctrl`) | list and switch only |
+| rollup, alpha | yes | not supported | not supported |
+
+Anything a platform cannot do says so and names the platform. Nothing is
+simulated. `calc` is pure arithmetic and works everywhere, which is why it
+exists: you can work out where a window would land before letting anything move
+it.
+
 | Operation | What it does | Status |
 |---|---|---|
 | `pager.list` | Visible top-level windows | planned |
@@ -305,8 +320,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 87 |
-| Operations ready | 77 |
-| Operations planned | 10 |
+| Operations ready | 86 |
+| Operations planned | 1 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

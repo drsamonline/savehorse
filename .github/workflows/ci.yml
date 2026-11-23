@@ -221,6 +221,14 @@ jobs:
           cargo run --quiet -- pulse drives
           cargo run --quiet -- pulse services
 
+          # pager — only the parts that need no desktop session. Listing windows
+          # on a headless runner is a legitimate empty answer; snap and switch
+          # need a window to act on and are covered by unit tests instead.
+          cargo run --quiet -- pager calc --position left --width 1920 --height 1080
+          cargo run --quiet -- pager calc --position center --width 1366 --height 768
+          cargo run --quiet -- pager list || true
+          cargo run --quiet -- pager launch true
+
           # a planned operation must refuse, and say why.
           # Ask the manifest which operation is still planned, rather than
           # naming one here. This check went stale three times as operations
