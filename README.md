@@ -13,8 +13,8 @@ modules behind one command line and one desktop app.
 [![Desktop](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml/badge.svg)](https://github.com/drsamonline/savehorse/actions/workflows/desktop.yml)
 ![Rust](https://img.shields.io/badge/rust-1.75%2B-dea584?logo=rust&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platforms-windows%20%7C%20macos%20%7C%20linux-4b5563)
-![Operations](https://img.shields.io/badge/operations-68%20of%2087-d8ff4f)
-![Tests](https://img.shields.io/badge/tests-142%20passing-4fd48a)
+![Operations](https://img.shields.io/badge/operations-73%20of%2087-d8ff4f)
+![Tests](https://img.shields.io/badge/tests-159%20passing-4fd48a)
 [![Licence](https://img.shields.io/badge/licence-PolyForm%20NC%201.0.0-ffb340)](LICENSE)
 
 [**Landing page**](https://drsamonline.github.io/savehorse/) ·
@@ -57,16 +57,15 @@ A migration in progress, not a finished product.
 |---|---|
 | Modules | 13 |
 | Operations declared | 87 |
-| Operations ported and tested | **68** |
-| Tests, on Windows, macOS and Linux | 142 |
+| Operations ported and tested | **73** |
+| Tests, on Windows, macOS and Linux | 159 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
 Ported so far: `sift` 9/9, `forge` 6/6, `revive` 7/7, `morph` 2/2, `glyph` 6/6,
-`iris` 8/8, `arc` 10/10, `halo` 7/7, `scout` 6/6, `aegis` 5/6, `pulse` 2/7.
-Still to come: the rest of `pulse` (5) and `pager` (9), which need cross-platform
-system and window APIs, `flux` (4), and `aegis.persistence` (1), which is a
-Windows registry audit.
+`iris` 8/8, `arc` 10/10, `halo` 7/7, `scout` 6/6, `aegis` 6/6, `pulse` 2/7, `flux` 4/4.
+Still to come: the rest of `pulse` (5) and `pager` (9), the two modules that
+need cross-platform system and window APIs.
 
 ## Quick start
 
@@ -148,7 +147,7 @@ manifest, so a new operation's booleans work without touching the CLI.
 
 | Module | Job | Replaces | Ported |
 |---|---|---|---|
-| `aegis` | Encrypt, shred, scan and audit | aegis + vault | 5 / 6 |
+| `aegis` | Encrypt, shred, scan and audit | aegis + vault | 6 / 6 |
 | `forge` | Inspect and patch executables | forge | 6 / 6 |
 | `halo` | Author, read and convert disc images | halo + optic | 7 / 7 |
 | `iris` | Inspect, convert and transform images | iris + prism | 8 / 8 |
@@ -160,7 +159,7 @@ manifest, so a new operation's booleans work without touching the CLI.
 | `pulse` | Hardware, processes and maintenance | pulse + beacon | 2 / 7 |
 | `pager` | Snap, pin and arrange windows | pager + dock | 0 / 9 |
 | `revive` | Carve, recover and verify snapshots | revive + chronos | 7 / 7 |
-| `flux` | Inspect, tag and shape audio | flux | 0 / 4 |
+| `flux` | Inspect, tag and shape audio | flux | 4 / 4 |
 
 ## Layout
 

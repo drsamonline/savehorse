@@ -210,6 +210,11 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "scout.treemap" => scout_treemap(req),
         "scout.inventory" => scout_inventory(req),
         "scout.diff" => scout_diff(req),
+        "aegis.persistence" => aegis_persistence(req),
+        "flux.inspect" => flux_inspect(req),
+        "flux.synth" => flux_synth(req),
+        "flux.tag" => flux_tag(req),
+        "flux.gain" => flux_gain(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -1681,6 +1686,133 @@ fn scout_diff(req: &Request) -> Result<Outcome> {
     };
 
     Ok(Outcome::new(text, to_json(&r)?))
+}
+
+
+// ---------------------------------------------------------------------------
+// aegis autostart, and flux
+// ---------------------------------------------------------------------------
+
+fn aegis_persistence(_req: &Request) -> Result<Outcome> {
+    let r = savehorse_aegis::audit_autostart()?;
+
+    let mut text = format!(
+        "platform   {}\nlocations  {} checked, {} present\nentries    {}\n",
+        r.platform,
+        r.locations_checked.len(),
+        r.locations_present,
+        r.entries.len()
+    );
+    for entry in &r.entries {
+        text.push_str(&format!(
+            "  {:<28} {}{}\n",
+            entry.name,
+            entry.target.clone().unwrap_or_else(|| "(no target stated)".to_string()),
+            if entry.target_exists { "" } else { "  [missing]" }
+        ));
+    }
+    if r.entries.is_empty() {
+        text.push_str("no autostart entries found\n");
+    }
+    text.push_str("\nfile-based autostart locations only; the Windows registry is not read\n");
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn flux_inspect(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let m = savehorse_flux::inspect(&path)?;
+
+    let mut text = format!(
+        "file       {}\nformat     {}\n",
+        m.file_path, m.container_format
+    );
+    if let Some(channels) = m.channels {
+        text.push_str(&format!(
+            "channels   {}\nrate       {} Hz\nbits       {}\nduration   {} s\n",
+            channels,
+            m.sample_rate.unwrap_or(0),
+            m.bits_per_sample.unwrap_or(0),
+            m.duration_seconds.clone().unwrap_or_default()
+        ));
+    }
+    text.push_str(&format!(
+        "title      {}\nartist     {}\nalbum      {}\nyear       {}\n",
+        m.title.clone().unwrap_or_else(|| "-".to_string()),
+        m.artist.clone().unwrap_or_else(|| "-".to_string()),
+        m.album.clone().unwrap_or_else(|| "-".to_string()),
+        m.year.clone().unwrap_or_else(|| "-".to_string())
+    ));
+
+    Ok(Outcome::new(text, to_json(&m)?))
+}
+
+fn flux_synth(req: &Request) -> Result<Outcome> {
+    let out = PathBuf::from(required_value(req, "out")?);
+    let frequency = req.number("frequency")?.map(|v| v as f64).unwrap_or(440.0);
+    let seconds = req.number("seconds")?.map(|v| v as f64).unwrap_or(1.0);
+    let rate = req.number("rate")?.unwrap_or(44100) as u32;
+    let channels = req.number("channels")?.unwrap_or(1) as u16;
+    let volume = req.number("volume")?.map(|v| v as f64).unwrap_or(0.5);
+
+    let r = savehorse_flux::synthesize(&out, frequency, seconds, rate, channels, volume)?;
+
+    Ok(Outcome::new(
+        format!(
+            "wrote '{}' — {} Hz for {} s at {} Hz, {} channel(s), {} sample(s), {} byte(s)\n",
+            r.output_file,
+            r.frequency_hz,
+            r.duration_seconds,
+            r.sample_rate,
+            r.channels,
+            r.total_samples,
+            r.file_size_bytes
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn flux_tag(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let title = req.value("title").unwrap_or("");
+    let artist = req.value("artist").unwrap_or("");
+    let album = req.value("album").unwrap_or("");
+    let year = req.value("year").unwrap_or("");
+
+    let r = savehorse_flux::write_tag(&path, title, artist, album, year)?;
+
+    Ok(Outcome::new(
+        format!(
+            "tagged '{}' — title '{}', artist '{}', album '{}', year '{}'{} ({} byte(s))\n",
+            r.file,
+            r.title,
+            r.artist,
+            r.album,
+            r.year,
+            if r.replaced_existing { " (replaced an existing tag)" } else { "" },
+            r.file_size_bytes
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn flux_gain(req: &Request) -> Result<Outcome> {
+    let source = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let gain = req
+        .number("gain")?
+        .map(|v| v as f64)
+        .ok_or_else(|| Error::Invalid("--gain is required, e.g. 1.5".to_string()))?;
+
+    let r = savehorse_flux::apply_gain(&source, &out, gain)?;
+
+    Ok(Outcome::new(
+        format!(
+            "wrote '{}' — {} sample(s) scaled by {}, {} clipped\n",
+            r.destination_file, r.samples_processed, r.gain_multiplier, r.samples_clipped
+        ),
+        to_json(&r)?,
+    ))
 }
 
 // ---------------------------------------------------------------------------

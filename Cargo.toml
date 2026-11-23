@@ -15,6 +15,7 @@ members = [
     "crates/savehorse-morph",
     "crates/savehorse-aegis",
     "crates/savehorse-pulse",
+    "crates/savehorse-flux",
     "apps/savehorse-cli",
 ]
 
@@ -41,6 +42,7 @@ savehorse-forge = { path = "crates/savehorse-forge" }
 savehorse-morph = { path = "crates/savehorse-morph" }
 savehorse-aegis = { path = "crates/savehorse-aegis" }
 savehorse-pulse = { path = "crates/savehorse-pulse" }
+savehorse-flux = { path = "crates/savehorse-flux" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

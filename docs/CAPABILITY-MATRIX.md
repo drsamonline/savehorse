@@ -24,6 +24,13 @@ From `aegis` (gen 1) and `vault` (gen 2).
 | `aegis.persistence` | Audit startup and persistence vectors | planned |
 | `aegis.harden` | Audit DEP, ASLR and signing on an executable | **ready** |
 
+**Porting note — autostart was made portable.** The original read the Windows
+registry, which needs a platform crate and works on one operating system. Every
+desktop has a file-based autostart directory — `.desktop` entries on Linux,
+launch agents on macOS, Startup folders on Windows — and reading those needs no
+dependency. The report names the locations it checked and says plainly that the
+registry is not among them.
+
 **Porting note — the cryptography was replaced, not carried.** Gen 1 `aegis`
 derived keys from a hand-written linear congruential generator seeded with the
 file size, and used a home-made CRC-32 as its integrity check. Neither is a
@@ -298,8 +305,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 87 |
-| Operations ready | 68 |
-| Operations planned | 19 |
+| Operations ready | 73 |
+| Operations planned | 14 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

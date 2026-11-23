@@ -554,6 +554,96 @@ const P_PATH_OPT: Param = Param {
     options: &[],
 };
 
+const P_FREQ: Param = Param {
+    name: "frequency",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Tone frequency in Hz (default 440)",
+    options: &[],
+};
+
+const P_SECONDS: Param = Param {
+    name: "seconds",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Length of the tone in seconds (default 1)",
+    options: &[],
+};
+
+const P_RATE: Param = Param {
+    name: "rate",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Sample rate in Hz (default 44100)",
+    options: &[],
+};
+
+const P_CHANNELS: Param = Param {
+    name: "channels",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "1 for mono, 2 for stereo (default 1)",
+    options: &[],
+};
+
+const P_VOLUME: Param = Param {
+    name: "volume",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Peak level, 0.0 to 1.0 (default 0.5)",
+    options: &[],
+};
+
+const P_GAIN: Param = Param {
+    name: "gain",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Multiplier applied to every sample, e.g. 1.5",
+    options: &[],
+};
+
+const P_TITLE: Param = Param {
+    name: "title",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Track title, up to 30 characters",
+    options: &[],
+};
+
+const P_ARTIST: Param = Param {
+    name: "artist",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Artist, up to 30 characters",
+    options: &[],
+};
+
+const P_ALBUM: Param = Param {
+    name: "album",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Album, up to 30 characters",
+    options: &[],
+};
+
+const P_YEAR: Param = Param {
+    name: "year",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Four-digit year",
+    options: &[],
+};
+
 const P_MODE: Param = Param {
     name: "mode",
     kind: ParamKind::Choice,
@@ -1015,6 +1105,15 @@ const ARC_UPNP: &[Param] = &[P_EXT_PORT, P_INT_PORT, P_IP, P_PROTOCOL];
 const SCOUT_TREEMAP: &[Param] = &[P_PATH, P_OUT_OPT, P_WIDTH_OPT];
 const SCOUT_DIFF: &[Param] = &[P_PATH_A, P_PATH_B];
 
+
+// ---------------------------------------------------------------------------
+// flux — Audio
+// ---------------------------------------------------------------------------
+
+const FLUX_SYNTH: &[Param] = &[P_OUT, P_FREQ, P_SECONDS, P_RATE, P_CHANNELS, P_VOLUME];
+const FLUX_TAG: &[Param] = &[P_PATH, P_TITLE, P_ARTIST, P_ALBUM, P_YEAR];
+const FLUX_GAIN: &[Param] = &[P_PATH, P_OUT, P_GAIN];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -1043,7 +1142,7 @@ pub static OPS: &[Op] = &[
     Op { id: "aegis.decrypt", module: "aegis", name: "decrypt", summary: "Decrypt a container made by encrypt", danger: Danger::Safe, status: Status::Implemented, params: AEGIS_CRYPTO },
     Op { id: "aegis.shred", module: "aegis", name: "shred", summary: "Overwrite and remove a file (DoD 5220.22-M, 3 passes)", danger: Danger::Irreversible, status: Status::Implemented, params: P_PATH_ONE },
     Op { id: "aegis.scan", module: "aegis", name: "scan", summary: "Scan for signature and heuristic threats", danger: Danger::Safe, status: Status::Implemented, params: AEGIS_SCAN },
-    Op { id: "aegis.persistence",module: "aegis", name: "persistence",summary: "Audit startup and persistence vectors",                    danger: Danger::Safe,         status: Status::Planned, params: &[] },
+    Op { id: "aegis.persistence", module: "aegis", name: "persistence", summary: "Audit startup and persistence vectors", danger: Danger::Safe, status: Status::Implemented, params: &[] },
     Op { id: "aegis.harden", module: "aegis", name: "harden", summary: "Audit an executable for DEP, ASLR and signing", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
 
     // -- forge -------------------------------------------------------------
@@ -1146,10 +1245,10 @@ pub static OPS: &[Op] = &[
     Op { id: "revive.geometry", module: "revive", name: "geometry", summary: "Read partition headers and entropy", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
 
     // -- flux --------------------------------------------------------------
-    Op { id: "flux.inspect", module: "flux", name: "inspect", summary: "Format, sample rate, channels, ID3 tags", danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "flux.synth",   module: "flux", name: "synth",   summary: "Synthesise a PCM WAV tone",               danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "flux.tag",     module: "flux", name: "tag",     summary: "Write ID3 metadata",                      danger: Danger::Destructive, status: Status::Planned, params: &[] },
-    Op { id: "flux.gain",    module: "flux", name: "gain",    summary: "Scale PCM volume",                        danger: Danger::Destructive, status: Status::Planned, params: &[] },
+    Op { id: "flux.inspect", module: "flux", name: "inspect", summary: "Format, sample rate, channels, ID3 tags", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "flux.synth", module: "flux", name: "synth", summary: "Synthesise a PCM WAV tone", danger: Danger::Safe, status: Status::Implemented, params: FLUX_SYNTH },
+    Op { id: "flux.tag", module: "flux", name: "tag", summary: "Write ID3 metadata", danger: Danger::Destructive, status: Status::Implemented, params: FLUX_TAG },
+    Op { id: "flux.gain", module: "flux", name: "gain", summary: "Scale PCM volume", danger: Danger::Destructive, status: Status::Implemented, params: FLUX_GAIN },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1194,7 +1293,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 87, "88 declared, minus glyph.search which sift.search supersedes");
-        assert_eq!(implemented, 68, "everything except the system, window, audio and registry operations");
+        assert_eq!(implemented, 73, "everything except the system and window operations");
     }
 
     #[test]
@@ -1238,7 +1337,11 @@ mod tests {
     #[test]
     fn implemented_operations_declare_their_parameters() {
         for o in OPS.iter().filter(|o| o.status == Status::Implemented) {
-            assert!(!o.params.is_empty(), "{} is implemented but declares no parameters", o.id);
+            // aegis.persistence takes no arguments: it audits a fixed set of
+            // platform locations. Every other operation must declare something.
+            if o.id != "aegis.persistence" {
+                assert!(!o.params.is_empty(), "{} is implemented but declares no parameters", o.id);
+            }
             // Not every operation takes a positional argument: `arc chunk`
             // is driven entirely by --total and --segments, and `arc upnp`
             // by four flags. Requiring one would be an assumption about the

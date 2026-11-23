@@ -1,0 +1,13 @@
+[package]
+name = "savehorse-flux"
+description = "Audio: read WAV metadata and ID3v1 tags, synthesise tones, apply gain."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+savehorse-core.workspace = true
+serde.workspace = true

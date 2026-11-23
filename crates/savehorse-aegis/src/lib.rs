@@ -453,6 +453,196 @@ pub fn harden(path: &Path) -> Result<SecurityFlags> {
     security_flags(path)
 }
 
+
+// ---------------------------------------------------------------------------
+// Autostart (from aegis, made portable)
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct AutostartEntry {
+    pub location: String,
+    pub name: String,
+    pub path: String,
+    /// The program the entry would launch, when the format states it.
+    pub target: Option<String>,
+    /// False when the target is named but not present — a broken autostart.
+    pub target_exists: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct PersistenceReport {
+    pub platform: String,
+    pub locations_checked: Vec<String>,
+    pub locations_present: usize,
+    pub entries: Vec<AutostartEntry>,
+}
+
+/// The file-based autostart locations this platform actually has.
+///
+/// The original `aegis` read the Windows registry, which needs a platform
+/// crate and only works on one operating system. Every desktop has *some*
+/// file-based autostart directory, and reading those is portable and needs no
+/// dependency. The registry keys remain the one place this does not look, and
+/// the report says so rather than implying otherwise.
+pub fn autostart_locations() -> Vec<PathBuf> {
+    let mut paths: Vec<PathBuf> = Vec::new();
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(appdata) = std::env::var("APPDATA") {
+            paths.push(
+                PathBuf::from(appdata)
+                    .join("Microsoft")
+                    .join("Windows")
+                    .join("Start Menu")
+                    .join("Programs")
+                    .join("Startup"),
+            );
+        }
+        if let Ok(programdata) = std::env::var("PROGRAMDATA") {
+            paths.push(
+                PathBuf::from(programdata)
+                    .join("Microsoft")
+                    .join("Windows")
+                    .join("Start Menu")
+                    .join("Programs")
+                    .join("Startup"),
+            );
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(home) = std::env::var_os("HOME") {
+            paths.push(PathBuf::from(home).join("Library").join("LaunchAgents"));
+        }
+        paths.push(PathBuf::from("/Library/LaunchAgents"));
+        paths.push(PathBuf::from("/Library/LaunchDaemons"));
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        if let Some(config) = std::env::var_os("XDG_CONFIG_HOME") {
+            paths.push(PathBuf::from(config).join("autostart"));
+        } else if let Some(home) = std::env::var_os("HOME") {
+            paths.push(
+                PathBuf::from(home)
+                    .join(".config")
+                    .join("autostart"),
+            );
+        }
+        paths.push(PathBuf::from("/etc/xdg/autostart"));
+    }
+
+    paths
+}
+
+/// Pull the program out of a `.desktop` entry or a launchd plist.
+fn target_of(path: &Path) -> Option<String> {
+    let text = fs::read_to_string(path).ok()?;
+    let extension = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    if extension == "desktop" {
+        for line in text.lines() {
+            if let Some(rest) = line.strip_prefix("Exec=") {
+                // Exec can carry arguments; the program is the first token.
+                let program = rest.trim().split_whitespace().next()?.to_string();
+                return Some(program);
+            }
+        }
+    }
+
+    if extension == "plist" {
+        // A tiny targeted read: the first <string> inside ProgramArguments,
+        // or the Program key. Not a plist parser, and not pretending to be.
+        if let Some(start) = text.find("<key>Program</key>") {
+            let after = &text[start..];
+            if let Some(open) = after.find("<string>") {
+                let rest = &after[open + 8..];
+                if let Some(close) = rest.find("</string>") {
+                    return Some(rest[..close].trim().to_string());
+                }
+            }
+        }
+        if let Some(open) = text.find("<string>") {
+            let rest = &text[open + 8..];
+            if let Some(close) = rest.find("</string>") {
+                return Some(rest[..close].trim().to_string());
+            }
+        }
+    }
+
+    None
+}
+
+/// Read a set of autostart directories.
+pub fn scan_autostart_dirs(dirs: &[PathBuf]) -> Result<Vec<AutostartEntry>> {
+    let mut entries = Vec::new();
+
+    for dir in dirs {
+        if !dir.is_dir() {
+            continue;
+        }
+        let listing = match fs::read_dir(dir) {
+            Ok(listing) => listing,
+            Err(_) => continue,
+        };
+
+        for item in listing.flatten() {
+            let path = item.path();
+            if !path.is_file() {
+                continue;
+            }
+
+            let target = target_of(&path);
+            let exists = target
+                .as_ref()
+                .map(|t| Path::new(t).exists() || looks_like_bare_command(t))
+                .unwrap_or(true);
+
+            entries.push(AutostartEntry {
+                location: dir.to_string_lossy().to_string(),
+                name: path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+                path: path.to_string_lossy().to_string(),
+                target,
+                target_exists: exists,
+            });
+        }
+    }
+
+    entries.sort_by(|a, b| a.location.cmp(&b.location).then(a.name.cmp(&b.name)));
+    Ok(entries)
+}
+
+/// A bare command name is resolved on PATH at launch, so its absence as a path
+/// is not evidence of a broken entry.
+fn looks_like_bare_command(target: &str) -> bool {
+    !target.contains('/') && !target.contains('\\')
+}
+
+/// Audit every autostart location this platform has.
+pub fn audit_autostart() -> Result<PersistenceReport> {
+    let locations = autostart_locations();
+    let entries = scan_autostart_dirs(&locations)?;
+
+    Ok(PersistenceReport {
+        platform: std::env::consts::OS.to_string(),
+        locations_checked: locations
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect(),
+        locations_present: locations.iter().filter(|p| p.is_dir()).count(),
+        entries,
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -629,6 +819,71 @@ mod tests {
         assert_eq!(report.threats_found, 1);
         assert!(report.threats[0].threat_name.contains("Test.Sample"));
         let _ = fs::remove_dir_all(&dir);
+    }
+
+
+    #[test]
+    fn autostart_reads_desktop_and_plist_entries() {
+        let dir = scratch("autostart");
+        let entries_dir = dir.join("autostart");
+        fs::create_dir_all(&entries_dir).unwrap();
+
+        fs::write(
+            entries_dir.join("app.desktop"),
+            b"[Desktop Entry]\nType=Application\nName=Test\nExec=/usr/bin/env sh\n",
+        )
+        .unwrap();
+        fs::write(
+            entries_dir.join("agent.plist"),
+            b"<plist><dict><key>Program</key><string>/bin/sh</string></dict></plist>",
+        )
+        .unwrap();
+
+        let found = scan_autostart_dirs(&[entries_dir.clone()]).unwrap();
+        assert_eq!(found.len(), 2);
+
+        let desktop = found.iter().find(|e| e.name == "app.desktop").unwrap();
+        assert_eq!(desktop.target.as_deref(), Some("/usr/bin/env"));
+        assert!(desktop.target_exists, "/usr/bin/env exists");
+
+        let plist = found.iter().find(|e| e.name == "agent.plist").unwrap();
+        assert_eq!(plist.target.as_deref(), Some("/bin/sh"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_missing_target_is_reported_as_broken() {
+        let dir = scratch("autostart-broken");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(
+            dir.join("gone.desktop"),
+            b"[Desktop Entry]\nExec=/nonexistent/binary --flag\n",
+        )
+        .unwrap();
+
+        let found = scan_autostart_dirs(&[dir.clone()]).unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].target.as_deref(), Some("/nonexistent/binary"));
+        assert!(!found[0].target_exists, "the target is not on disk");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_bare_command_is_not_treated_as_broken() {
+        let dir = scratch("autostart-bare");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("x.desktop"), b"[Desktop Entry]\nExec=firefox --new-window\n").unwrap();
+
+        let found = scan_autostart_dirs(&[dir.clone()]).unwrap();
+        assert_eq!(found[0].target.as_deref(), Some("firefox"));
+        assert!(found[0].target_exists, "a bare command resolves on PATH at launch");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn missing_directories_are_skipped_quietly() {
+        let found = scan_autostart_dirs(&[std::path::PathBuf::from("/definitely/not/here")]).unwrap();
+        assert!(found.is_empty());
     }
 
     #[test]

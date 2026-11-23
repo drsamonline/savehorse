@@ -204,6 +204,17 @@ jobs:
           cargo run --quiet -- scout inventory smoke
           cargo run --quiet -- scout diff smoke/test.iso smoke/rejoined.iso
 
+          # flux — audio
+          cargo run --quiet -- flux synth --out smoke/tone.wav --frequency 440 --seconds 0.1 --rate 8000
+          test -s smoke/tone.wav
+          cargo run --quiet -- flux inspect smoke/tone.wav
+          cargo run --quiet -- flux tag smoke/tone.wav --title "Smoke Tone" --artist savehorse --album Test --year 2026
+          cargo run --quiet -- flux gain smoke/tone.wav --out smoke/loud.wav --gain 1.5
+          test -s smoke/loud.wav
+
+          # aegis autostart audit (reads, never changes)
+          cargo run --quiet -- aegis persistence
+
           # a planned operation must refuse, and say why.
           # pulse.services still needs a platform API, so it is the one that
           # refuses. (aegis shred held this role until it was ported.)
