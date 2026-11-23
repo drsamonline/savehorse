@@ -311,6 +311,96 @@ const P_FORMAT: Param = Param {
     options: &["png", "jpg", "bmp", "gif", "ico"],
 };
 
+const P_TYPES: Param = Param {
+    name: "types",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Comma-separated formats to look for, e.g. png,jpg,pdf",
+    options: &[],
+};
+
+const P_NUMBERS: Param = Param {
+    name: "numbers",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Prefix each line with its number",
+    options: &[],
+};
+
+const P_START: Param = Param {
+    name: "start",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "First line to show (1-based)",
+    options: &[],
+};
+
+const P_COUNT: Param = Param {
+    name: "count",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "How many lines to show",
+    options: &[],
+};
+
+const P_EOL_TO: Param = Param {
+    name: "to",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: false,
+    help: "Rewrite line endings to this style",
+    options: &["crlf", "lf", "cr"],
+};
+
+const P_ENC_TO: Param = Param {
+    name: "to",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: true,
+    help: "Target encoding",
+    options: &["utf8", "utf8-bom", "utf16le", "ascii"],
+};
+
+const P_IN_PLACE: Param = Param {
+    name: "in-place",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Rewrite the file; without it this only reports what would change",
+    options: &[],
+};
+
+const P_STRIP: Param = Param {
+    name: "strip-trailing",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Remove spaces and tabs at the end of each line",
+    options: &[],
+};
+
+const P_TAB: Param = Param {
+    name: "tab-size",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Expand tabs to this many spaces",
+    options: &[],
+};
+
+const P_COLLAPSE: Param = Param {
+    name: "collapse-blank",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Reduce runs of blank lines to one",
+    options: &[],
+};
+
 const P_STORE: Param = Param {
     name: "store",
     kind: ParamKind::Bool,
@@ -509,6 +599,26 @@ const ARC_EXTRACT: &[Param] = &[P_ARCHIVE, P_OUT, P_FILTER];
 const ARC_SPLIT: &[Param] = &[P_PATH, P_OUT, P_SIZE];
 const ARC_JOIN: &[Param] = &[P_INPUT, P_OUT_OPT];
 
+
+// ---------------------------------------------------------------------------
+// revive — Recovery
+// ---------------------------------------------------------------------------
+
+const REVIVE_SCAN: &[Param] = &[P_PATH, P_TYPES, P_MIN_SIZE, P_MAX_SIZE];
+const REVIVE_CARVE: &[Param] = &[P_PATH, P_OUT, P_TYPES, P_MIN_SIZE, P_MAX_SIZE];
+const REVIVE_REPORT: &[Param] = &[P_PATH, P_OUT_OPT];
+const REVIVE_PACK: &[Param] = &[P_SOURCE, P_OUT];
+const REVIVE_UNPACK: &[Param] = &[P_ARCHIVE, P_OUT];
+
+// ---------------------------------------------------------------------------
+// sift — the text half, from slate
+// ---------------------------------------------------------------------------
+
+const SIFT_VIEW: &[Param] = &[P_PATH, P_NUMBERS, P_START, P_COUNT];
+const SIFT_EOL: &[Param] = &[P_PATH, P_EOL_TO, P_IN_PLACE];
+const SIFT_CLEAN_OP: &[Param] = &[P_PATH, P_STRIP, P_TAB, P_COLLAPSE, P_IN_PLACE];
+const SIFT_CONVERT: &[Param] = &[P_PATH, P_ENC_TO, P_OUT];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -584,11 +694,11 @@ pub static OPS: &[Op] = &[
     Op { id: "sift.search",  module: "sift", name: "search",  summary: "Search files by literal or regular expression",   danger: Danger::Safe,         status: Status::Implemented, params: SIFT_SEARCH },
     Op { id: "sift.replace", module: "sift", name: "replace", summary: "Replace matches across files, with preview",      danger: Danger::Destructive,  status: Status::Implemented, params: SIFT_REPLACE },
     Op { id: "sift.xor",     module: "sift", name: "xor",     summary: "Recover XOR-obfuscated text from a binary",       danger: Danger::Safe,         status: Status::Implemented, params: SIFT_XOR },
-    Op { id: "sift.view",    module: "sift", name: "view",    summary: "Read a text file with line numbers",             danger: Danger::Safe,         status: Status::Planned,     params: &[] },
-    Op { id: "sift.eol",     module: "sift", name: "eol",     summary: "Normalise line endings",                          danger: Danger::Destructive,  status: Status::Planned,     params: &[] },
-    Op { id: "sift.clean",   module: "sift", name: "clean",   summary: "Strip trailing whitespace and blank-line runs",   danger: Danger::Destructive,  status: Status::Planned,     params: &[] },
-    Op { id: "sift.stats",   module: "sift", name: "stats",   summary: "Lines, words, characters, encoding",             danger: Danger::Safe,         status: Status::Planned,     params: &[] },
-    Op { id: "sift.convert", module: "sift", name: "convert", summary: "Convert text between encodings",                 danger: Danger::Safe,         status: Status::Planned,     params: &[] },
+    Op { id: "sift.view", module: "sift", name: "view", summary: "Read a text file with line numbers", danger: Danger::Safe, status: Status::Implemented, params: SIFT_VIEW },
+    Op { id: "sift.eol", module: "sift", name: "eol", summary: "Normalise line endings", danger: Danger::Destructive, status: Status::Implemented, params: SIFT_EOL },
+    Op { id: "sift.clean", module: "sift", name: "clean", summary: "Strip trailing whitespace and blank-line runs", danger: Danger::Destructive, status: Status::Implemented, params: SIFT_CLEAN_OP },
+    Op { id: "sift.stats", module: "sift", name: "stats", summary: "Lines, words, characters, encoding", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "sift.convert", module: "sift", name: "convert", summary: "Convert text between encodings", danger: Danger::Safe, status: Status::Implemented, params: SIFT_CONVERT },
 
     // -- glyph -------------------------------------------------------------
     Op { id: "glyph.pdf", module: "glyph", name: "pdf", summary: "Generate a PDF from text", danger: Danger::Safe, status: Status::Implemented, params: GLYPH_PDF },
@@ -632,13 +742,13 @@ pub static OPS: &[Op] = &[
     Op { id: "pager.calc",   module: "pager", name: "calc",   summary: "Compute grid snap bounds",             danger: Danger::Safe, status: Status::Planned, params: &[] },
 
     // -- revive ------------------------------------------------------------
-    Op { id: "revive.scan",     module: "revive", name: "scan",     summary: "Scan an image for recoverable files",   danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "revive.carve",    module: "revive", name: "carve",    summary: "Carve files out by signature",           danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "revive.report",   module: "revive", name: "report",   summary: "Summarise a carving run",                danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "revive.pack",     module: "revive", name: "pack",     summary: "Pack a tree into a snapshot",            danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "revive.unpack",   module: "revive", name: "unpack",   summary: "Restore a snapshot",                     danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "revive.verify",   module: "revive", name: "verify",   summary: "Check a snapshot's checksums",           danger: Danger::Safe, status: Status::Planned, params: &[] },
-    Op { id: "revive.geometry", module: "revive", name: "geometry", summary: "Read partition headers and entropy",     danger: Danger::Safe, status: Status::Planned, params: &[] },
+    Op { id: "revive.scan", module: "revive", name: "scan", summary: "Scan an image for recoverable files", danger: Danger::Safe, status: Status::Implemented, params: REVIVE_SCAN },
+    Op { id: "revive.carve", module: "revive", name: "carve", summary: "Carve files out by signature", danger: Danger::Safe, status: Status::Implemented, params: REVIVE_CARVE },
+    Op { id: "revive.report", module: "revive", name: "report", summary: "Summarise a carving run", danger: Danger::Safe, status: Status::Implemented, params: REVIVE_REPORT },
+    Op { id: "revive.pack", module: "revive", name: "pack", summary: "Pack a tree into a snapshot", danger: Danger::Safe, status: Status::Implemented, params: REVIVE_PACK },
+    Op { id: "revive.unpack", module: "revive", name: "unpack", summary: "Restore a snapshot", danger: Danger::Safe, status: Status::Implemented, params: REVIVE_UNPACK },
+    Op { id: "revive.verify", module: "revive", name: "verify", summary: "Check a snapshot's checksums", danger: Danger::Safe, status: Status::Implemented, params: ARC_ONE },
+    Op { id: "revive.geometry", module: "revive", name: "geometry", summary: "Read partition headers and entropy", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
 
     // -- flux --------------------------------------------------------------
     Op { id: "flux.inspect", module: "flux", name: "inspect", summary: "Format, sample rate, channels, ID3 tags", danger: Danger::Safe, status: Status::Planned, params: &[] },
@@ -689,7 +799,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 88, "the plan promises 88 operations");
-        assert_eq!(implemented, 30, "sift 4, scout 3, glyph 6, halo 5, iris 6, arc 6");
+        assert_eq!(implemented, 42, "sift 9, scout 3, glyph 6, halo 5, iris 6, arc 6, revive 7");
     }
 
     #[test]

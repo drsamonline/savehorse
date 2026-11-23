@@ -125,11 +125,17 @@ operations also land here.
 | `sift.search` | Literal or regex search with line numbers | **ready** |
 | `sift.replace` | Batch replace with preview and backup | **ready** |
 | `sift.xor` | Recover XOR-obfuscated text | **ready** |
-| `sift.view` | Read a text file with line numbers | planned |
-| `sift.eol` | Normalise line endings | planned |
-| `sift.clean` | Strip trailing whitespace | planned |
-| `sift.stats` | Lines, words, characters, encoding | planned |
-| `sift.convert` | Convert between encodings | planned |
+| `sift.view` | Read a text file with line numbers | **ready** |
+| `sift.eol` | Normalise line endings | **ready** |
+| `sift.clean` | Strip trailing whitespace | **ready** |
+| `sift.stats` | Lines, words, characters, encoding | **ready** |
+| `sift.convert` | Convert between encodings | **ready** |
+
+**Text note.** The `view`, `eol`, `clean`, `stats` and `convert` operations came
+from `slate` (gen 2) and live in the same crate, because reading and changing
+text is one job. Two behaviours changed on purpose: `convert` requires an
+explicit output rather than overwriting the source when none is given, and
+`view` ends lines with `\n` instead of `\r\n`.
 
 **Porting note.** The original searched inside `.zip` archives. That needs the
 `zip` crate and is deferred, not dropped — it will return as `sift.search`
@@ -217,6 +223,10 @@ From `pager` (gen 2) and `dock` (gen 1).
 | `pager.launch` | Start an application detached | planned |
 | `pager.calc` | Compute grid snap bounds | planned |
 
+**Porting note.** `report` was the same call as `scan` with different flags in
+the original. Here it writes a real report — per-format totals and a plain
+assessment — optionally to a file.
+
 **Porting note.** This is the one module that cannot be a pure
 file-in/result-out tool: it manipulates other applications' windows, which needs
 a resident agent and a different implementation per platform (Win32, macOS
@@ -229,13 +239,13 @@ From `revive` (gen 2) and `chronos` (gen 1).
 
 | Operation | What it does | Status |
 |---|---|---|
-| `revive.scan` | Scan an image for recoverable files | planned |
-| `revive.carve` | Carve files out by signature | planned |
-| `revive.report` | Summarise a carving run | planned |
-| `revive.pack` | Pack a tree into a snapshot | planned |
-| `revive.unpack` | Restore a snapshot | planned |
-| `revive.verify` | Check a snapshot's checksums | planned |
-| `revive.geometry` | Partition headers and entropy | planned |
+| `revive.scan` | Scan an image for recoverable files | **ready** |
+| `revive.carve` | Carve files out by signature | **ready** |
+| `revive.report` | Summarise a carving run | **ready** |
+| `revive.pack` | Pack a tree into a snapshot | **ready** |
+| `revive.unpack` | Restore a snapshot | **ready** |
+| `revive.verify` | Check a snapshot's checksums | **ready** |
+| `revive.geometry` | Partition headers and entropy | **ready** |
 
 ## flux — Audio
 
@@ -261,8 +271,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ready | 30 |
-| Operations planned | 58 |
+| Operations ready | 42 |
+| Operations planned | 46 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

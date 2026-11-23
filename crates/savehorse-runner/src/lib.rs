@@ -172,6 +172,18 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "arc.test" => arc_test(req),
         "arc.split" => arc_split(req),
         "arc.join" => arc_join(req),
+        "revive.scan" => revive_scan(req),
+        "revive.carve" => revive_carve(req),
+        "revive.report" => revive_report(req),
+        "revive.pack" => revive_pack(req),
+        "revive.unpack" => revive_unpack(req),
+        "revive.verify" => revive_verify(req),
+        "revive.geometry" => revive_geometry(req),
+        "sift.view" => sift_view(req),
+        "sift.eol" => sift_eol(req),
+        "sift.clean" => sift_clean(req),
+        "sift.stats" => sift_stats(req),
+        "sift.convert" => sift_convert(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -842,6 +854,225 @@ fn arc_join(req: &Request) -> Result<Outcome> {
         format!(
             "joined {} chunk(s) into '{}' ({} byte(s))\n",
             r.chunks, r.output, r.total_bytes
+        ),
+        to_json(&r)?,
+    ))
+}
+
+
+// ---------------------------------------------------------------------------
+// revive
+// ---------------------------------------------------------------------------
+
+fn revive_bounds(req: &Request) -> Result<(Option<usize>, Option<usize>)> {
+    let min = req.size("min-size")?.map(|n| n as usize);
+    let max = req.size("max-size")?.map(|n| n as usize);
+    Ok((min, max))
+}
+
+fn revive_scan(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let (min, max) = revive_bounds(req)?;
+    let summary = savehorse_revive::scan_file(&path, req.value("types"), min, max)?;
+
+    let mut text = format!(
+        "scanned {} byte(s) of '{}'\nfound {} artifact(s), {} byte(s) recoverable\n\n",
+        summary.total_scanned_bytes, summary.source_file, summary.artifacts_found, summary.total_recovered_bytes
+    );
+    for a in &summary.artifacts {
+        text.push_str(&format!(
+            "  #{:<4} {:<16} 0x{:08X}  {:>9} byte(s)  {}\n",
+            a.index, a.format, a.offset_bytes, a.length_bytes, &a.sha256[..16.min(a.sha256.len())]
+        ));
+    }
+
+    Ok(Outcome::new(text, to_json(&summary)?))
+}
+
+fn revive_carve(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let (min, max) = revive_bounds(req)?;
+
+    let summary = savehorse_revive::carve_file(&path, &out, req.value("types"), min, max)?;
+
+    let mut text = format!(
+        "carved {} file(s) from '{}' into '{}' ({} byte(s))\n",
+        summary.artifacts_found, summary.source_file, out.display(), summary.total_recovered_bytes
+    );
+    for a in &summary.artifacts {
+        if let Some(ref saved) = a.saved_filename {
+            text.push_str(&format!("  {}\n", saved));
+        }
+    }
+
+    Ok(Outcome::new(text, to_json(&summary)?))
+}
+
+fn revive_report(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let summary = savehorse_revive::scan_file(&path, None, None, None)?;
+    let report = savehorse_revive::build_report(&summary);
+
+    match req.value("out") {
+        Some(dest) if !dest.trim().is_empty() => {
+            fs::write(dest, &report)?;
+            Ok(Outcome::new(
+                format!("wrote a recovery report for '{}' to '{}'\n", path.display(), dest),
+                to_json(&summary)?,
+            ))
+        }
+        _ => Ok(Outcome::new(report, to_json(&summary)?)),
+    }
+}
+
+fn revive_pack(req: &Request) -> Result<Outcome> {
+    let source = PathBuf::from(req.position(0, "source")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let r = savehorse_revive::pack_directory(&source, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "packed {} file(s), {} byte(s) into '{}'\n",
+            r.files_archived, r.total_bytes_archived, r.archive_path
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn revive_unpack(req: &Request) -> Result<Outcome> {
+    let archive = PathBuf::from(req.position(0, "archive")?);
+    let out = PathBuf::from(required_value(req, "out")?);
+    let r = savehorse_revive::unpack_archive(&archive, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "restored {} file(s), {} byte(s) to '{}'\n",
+            r.files_extracted, r.total_bytes_extracted, r.destination_directory
+        ),
+        to_json(&r)?,
+    ))
+}
+
+fn revive_verify(req: &Request) -> Result<Outcome> {
+    let archive = PathBuf::from(req.position(0, "archive")?);
+    let r = savehorse_revive::verify_archive(&archive)?;
+
+    let mut text = if r.all_passed {
+        format!("OK '{}' — all {} file(s) match their checksums\n", r.archive_path, r.valid_files)
+    } else {
+        format!(
+            "FAILED '{}' — {} of {} file(s) corrupted\n",
+            r.archive_path, r.corrupted_files, r.total_files
+        )
+    };
+    for entry in r.results.iter().filter(|e| !e.is_valid) {
+        text.push_str(&format!(
+            "  ! {} (expected {:08x}, found {:08x})\n",
+            entry.path, entry.expected_crc32, entry.actual_crc32
+        ));
+    }
+
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+fn revive_geometry(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_revive::scan_disk_image(&path)?;
+
+    let text = format!(
+        "file       {}\nbytes      {}\nsectors    {} (512 byte)\npartition  {}\nzero       {}\ndata       {}\nentropy    {} bits/byte\n",
+        r.target_file, r.total_bytes, r.total_sectors, r.partition_scheme, r.zero_sectors, r.data_sectors, r.average_entropy
+    );
+    Ok(Outcome::new(text, to_json(&r)?))
+}
+
+// ---------------------------------------------------------------------------
+// sift — the text half
+// ---------------------------------------------------------------------------
+
+fn sift_view(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let start = req.number("start")?.unwrap_or(1);
+    let r = savehorse_sift::view(&path, req.has("numbers"), start, req.number("count")?)?;
+
+    Ok(Outcome::new(r.text.clone(), to_json(&r)?))
+}
+
+fn sift_eol(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_sift::normalize_eol(&path, req.value("to"), req.has("in-place"))?;
+
+    let mut text = format!(
+        "file       {}\nCRLF       {}\nLF         {}\nCR         {}\ndominant   {}\n",
+        r.file, r.crlf_count, r.lf_count, r.cr_count, r.detected_dominant
+    );
+    match r.converted_to {
+        Some(ref style) if r.in_place => text.push_str(&format!("rewritten  {}\n", style)),
+        Some(ref style) => text.push_str(&format!("would write {} — add --in-place to apply\n", style)),
+        None => text.push_str("no conversion asked for\n"),
+    }
+
+    let mut outcome = Outcome::new(text, to_json(&r)?);
+    if r.converted_to.is_some() && !r.in_place {
+        outcome = outcome.preview();
+    }
+    Ok(outcome)
+}
+
+fn sift_clean(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let r = savehorse_sift::clean_text(
+        &path,
+        req.has("strip-trailing"),
+        req.number("tab-size")?,
+        req.has("collapse-blank"),
+        req.has("in-place"),
+    )?;
+
+    let mut text = format!(
+        "file       {}\nlines      {}\ntrailing   {}\ntabs       {}\nblanks     {}\n",
+        r.file, r.lines_processed, r.trailing_spaces_removed, r.tabs_expanded, r.blank_lines_collapsed
+    );
+    if r.in_place {
+        text.push_str("rewritten\n");
+    } else {
+        text.push_str("nothing written — add --in-place to apply\n");
+    }
+
+    let mut outcome = Outcome::new(text, to_json(&r)?);
+    if !r.in_place {
+        outcome = outcome.preview();
+    }
+    Ok(outcome)
+}
+
+fn sift_stats(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let s = savehorse_sift::document_stats(&path)?;
+
+    let text = format!(
+        "file       {}\nbytes      {}\ncharacters {}\nwords      {}\nunique     {}\nlines      {}\nempty      {}\navg word   {}\nlongest    {}\n",
+        s.file, s.total_bytes, s.total_characters, s.total_words, s.unique_words,
+        s.total_lines, s.empty_lines, s.average_word_length, s.longest_line_chars
+    );
+    Ok(Outcome::new(text, to_json(&s)?))
+}
+
+fn sift_convert(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let to = required_value(req, "to")?;
+    let out = PathBuf::from(required_value(req, "out")?);
+
+    let r = savehorse_sift::convert_encoding(&path, to, &out)?;
+
+    Ok(Outcome::new(
+        format!(
+            "converted '{}' ({}) -> '{}' as {}\n",
+            r.file,
+            r.detected_encoding,
+            r.output_path.clone().unwrap_or_default(),
+            r.converted_to.clone().unwrap_or_default()
         ),
         to_json(&r)?,
     ))

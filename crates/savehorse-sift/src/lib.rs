@@ -11,6 +11,10 @@
 //!    show it — which is what lets the same code serve the CLI and the desktop
 //!    app.
 
+pub mod text;
+
+pub use text::*;
+
 use regex::{Regex, RegexBuilder};
 use serde::Serialize;
 use savehorse_core::{Error, Result, WalkOptions};

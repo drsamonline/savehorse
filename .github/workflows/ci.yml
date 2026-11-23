@@ -105,6 +105,30 @@ jobs:
           cargo run --quiet -- arc join smoke/parts/test.iso.manifest.json --out smoke/rejoined.iso
           cmp smoke/test.iso smoke/rejoined.iso
 
+          # revive — carve a PNG out of a blob, then snapshot and restore
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' | base64 -d > smoke/carve_src.png
+          head -c 200 /dev/zero > smoke/blob.bin
+          cat smoke/carve_src.png >> smoke/blob.bin
+          cargo run --quiet -- revive scan smoke/blob.bin
+          cargo run --quiet -- revive report smoke/blob.bin
+          cargo run --quiet -- revive carve smoke/blob.bin --out smoke/carved
+          ls smoke/carved | grep -q 'carved_0001'
+          cargo run --quiet -- revive pack smoke/iso --out smoke/snap.chronos
+          cargo run --quiet -- revive verify smoke/snap.chronos
+          cargo run --quiet -- revive unpack smoke/snap.chronos --out smoke/restored
+          grep -q 'hello iso' smoke/restored/readme.txt
+          cargo run --quiet -- revive geometry smoke/test.iso
+
+          # sift text half
+          printf 'line one\nline two  \n\n\nline three\n' > smoke/messy.txt
+          cargo run --quiet -- sift view smoke/messy.txt --numbers
+          cargo run --quiet -- sift stats smoke/messy.txt
+          cargo run --quiet -- sift eol smoke/messy.txt
+          cargo run --quiet -- sift clean smoke/messy.txt --strip-trailing --collapse-blank
+          cargo run --quiet -- sift clean smoke/messy.txt --strip-trailing --collapse-blank --in-place
+          cargo run --quiet -- sift convert smoke/messy.txt --to utf8-bom --out smoke/messy-bom.txt
+          test -s smoke/messy-bom.txt
+
           # a planned operation must refuse, and say why
           if cargo run --quiet -- aegis shred smoke/text.txt 2>err.txt; then
             echo "planned operation should have failed"
