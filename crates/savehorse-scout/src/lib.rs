@@ -536,7 +536,7 @@ pub fn inspect_directory(root: &Path) -> Result<InventoryReport> {
         )));
     }
 
-    let files = shavehorse_core::walk_files(
+    let files = savehorse_core::walk_files(
         root,
         &WalkOptions {
             include_hidden: true,
