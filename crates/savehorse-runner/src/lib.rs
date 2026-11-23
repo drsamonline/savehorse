@@ -1460,7 +1460,10 @@ mod tests {
 
     #[test]
     fn planned_operations_refuse_to_run() {
-        let req = Request::new("aegis", "shred").arg("/tmp/whatever");
+        // pulse.services is declared but still needs a platform API, so it is
+        // the operation that refuses. (aegis.shred used to hold this role
+        // until it was ported.)
+        let req = Request::new("pulse", "services");
         let err = execute(&req).unwrap_err().to_string();
         assert!(err.contains("not ported yet"), "got: {}", err);
     }
