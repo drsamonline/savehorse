@@ -561,7 +561,13 @@ mod tests {
     fn rejects_a_file_that_is_not_pe() {
         let dir = scratch("notpe");
         let file = dir.join("a.txt");
-        fs::write(&file, b"this is not an executable at all, not even close").unwrap();
+        // Long enough to pass the 64-byte minimum, so the MZ check is the
+        // thing being tested rather than the size guard.
+        fs::write(
+            &file,
+            b"this is not an executable at all, not even close, not by any measure whatsoever",
+        )
+        .unwrap();
         let err = inspect_pe(&file).unwrap_err().to_string();
         assert!(err.contains("MZ"), "got: {}", err);
         let _ = fs::remove_dir_all(&dir);
