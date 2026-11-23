@@ -22,8 +22,8 @@
     /* Warm ink, not white. */
     --ink: #ece9e2;
     --ink-mid: #a8a49b;
-    --ink-low: #6e6a62;
-    --ink-ghost: #4a4741;
+    --ink-low: #8a857c;
+    --ink-ghost: #807b72;
 
     /* Two accents: the app's signal lime, and copper for editorial marks. */
     --signal: #d8ff4f;
@@ -60,6 +60,17 @@
 
   a { color: inherit; }
   ::selection { background: var(--signal); color: #0a0b0c; }
+
+  /* Keyboard focus, deliberately: the browser default on a near-black page is
+     whatever each browser decides, and this page never declared one. */
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  /* The top bar is sticky, so an anchor jump would land underneath it. */
+  section { scroll-margin-top: 70px; }
 
   /* ---------- the spine: a technical drawing margin ---------- */
   .spine {
