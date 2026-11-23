@@ -130,6 +130,10 @@ export function OpForm({
 
   return (
     <div className="form">
+      {op.params.length > 0 && !planned && (
+        <div className="form-section">Parameters</div>
+      )}
+
       {op.params.length === 0 && !planned && (
         <div className="small" style={{ color: "var(--ink-faint)" }}>
           This operation takes no parameters.
@@ -159,20 +163,24 @@ export function OpForm({
         </label>
       )}
 
-      <div className="actions">
-        <button className="run" onClick={onRun} disabled={running || !canRun || planned}>
-          {planned ? "Not ported yet" : running ? "Running…" : destructive ? "Preview" : "Run"}
-        </button>
-        {destructive && !planned && (
-          <span className="danger-note" data-level={op.danger.toUpperCase()}>
-            {op.danger === "irreversible" ? "▲" : "•"} {DANGER_LABEL[op.danger]}
-            {op.danger === "irreversible" ? " — previews first, deletes only on confirm" : ""}
-          </span>
-        )}
-      </div>
+      {/* Sticky, because the run button and the command line are the two things
+          a reader needs and they used to sit below the fold on a short window. */}
+      <div className="form-footer">
+        <div className="cli-echo" title="The same thing, on the command line">
+          <b>$</b> {cliEcho}
+        </div>
 
-      <div className="cli-echo" title="The same thing, on the command line">
-        <b>$</b> {cliEcho}
+        <div className="actions">
+          <button className="run" onClick={onRun} disabled={running || !canRun || planned}>
+            {planned ? "Not ported yet" : running ? "Running…" : destructive ? "Preview" : "Run"}
+          </button>
+          {destructive && !planned && (
+            <span className="danger-note" data-level={op.danger.toUpperCase()}>
+              {op.danger === "irreversible" ? "▲" : "•"} {DANGER_LABEL[op.danger]}
+              {op.danger === "irreversible" ? " — previews first, deletes only on confirm" : ""}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
