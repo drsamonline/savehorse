@@ -204,14 +204,14 @@ pub fn hardware() -> Result<HardwareReport> {
     let frequency = cpus.first().map(|c| c.frequency()).unwrap_or(0);
 
     Ok(HardwareReport {
-        hostname: sysinfo::System::host_name(),
-        os_name: sysinfo::System::name(),
-        os_version: sysinfo::System::os_version(),
-        kernel: sysinfo::System::kernel_version(),
+        hostname: sysinfo::System::host_name().ok(),
+        os_name: sysinfo::System::name().ok(),
+        os_version: sysinfo::System::os_version().ok(),
+        kernel: sysinfo::System::kernel_version().ok(),
         arch: std::env::consts::ARCH.to_string(),
         cpu_brand: brand,
         cpu_cores_logical: cpus.len(),
-        cpu_cores_physical: sysinfo::System::physical_core_count(),
+        cpu_cores_physical: sysinfo::System::physical_core_count().ok(),
         cpu_frequency_mhz: frequency,
         total_memory_bytes: sys.total_memory(),
         used_memory_bytes: sys.used_memory(),
