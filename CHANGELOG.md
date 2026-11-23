@@ -4,6 +4,34 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-11-23
+
+Every operation in the manifest is now ported. Nothing is declared and waiting.
+
+### Added
+
+- `pulse priority`: set a process's scheduling class through
+  `SetPriorityClass` on Windows and `setpriority` on Unix. It previews by
+  default and only changes anything with `--commit`.
+- A live terminal on the landing page, running real commands with the output
+  the tool produces.
+
+### Changed
+
+- Releases publish on a tag rather than waiting as a draft, so a tag is visible
+  as soon as its build passes.
+- Release notes are taken from the changelog section for that version instead of
+  the whole file.
+
+### Fixed
+
+- `savehorse ops | head` panicked on a broken pipe. SIGPIPE is restored, so a
+  closed reader is a quiet exit.
+- The "planned operation refuses" test and CI check named a specific operation
+  and went stale each time one was ported. Both now ask the manifest.
+- `pulse priority` reported a Windows priority class name on Unix. The label
+  follows the platform now.
+
 ## [0.1.0] — 2026-11-23
 
 First release. Thirteen modules, one command line, one desktop app.

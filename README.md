@@ -59,7 +59,7 @@ All 87 operations are ported and tested, and all thirteen modules are complete.
 | Modules | 13 |
 | Operations declared | 87 |
 | Operations ported and tested | **87** |
-| Tests, on Windows, macOS and Linux | 169 |
+| Tests, on Windows, macOS and Linux | 175 |
 | Desktop app | Tauri 2 + React |
 | Licence | PolyForm Noncommercial 1.0.0 |
 
