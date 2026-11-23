@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Job, ModuleView, OpView, RunRequest, RunResult } from "./lib/types";
-import { isDesktop, loadManifest, runOperation } from "./lib/bridge";
+import { isDesktop, isStatic, loadManifest, runOperation } from "./lib/bridge";
 import { Rail } from "./components/Rail";
 import { Palette } from "./components/Palette";
 import { OpForm } from "./components/OpForm";
@@ -93,6 +93,8 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const nextJobId = useRef(1);
+  // Values the form should take on the next reset (used by the static demo).
+  const pendingValues = useRef<Record<string, string> | null>(null);
 
   // Load the manifest once. In the desktop app it comes from the Rust registry;
   // in a browser it is a names-only stand-in.
@@ -102,6 +104,21 @@ export default function App() {
       .then((list) => {
         if (cancelled) return;
         setModules(list);
+        // The static demo opens on an operation it has a captured result for,
+        // so the page shows real output rather than an empty pane.
+        const showcase = isStatic
+          ? list.find((m) => m.name === "sift")?.ops.find((o) => o.name === "search")
+          : undefined;
+
+        if (showcase) {
+          const sample = { pattern: "alpha", paths: "smoke" };
+          pendingValues.current = sample;
+          setActiveModule("sift");
+          setActiveOp("search");
+          void run({ module: "sift", op: showcase, values: sample, apply: false });
+          return;
+        }
+
         const first = list.find((m) => m.ops.some((o) => o.status === "implemented")) ?? list[0];
         if (first) {
           setActiveModule(first.name);
@@ -132,7 +149,12 @@ export default function App() {
 
   // Reset the form whenever the operation changes.
   useEffect(() => {
-    setValues(defaultValues(currentOp));
+    if (pendingValues.current) {
+      setValues(pendingValues.current);
+      pendingValues.current = null;
+    } else {
+      setValues(defaultValues(currentOp));
+    }
     setApply(false);
     setError(null);
   }, [currentOp]);
@@ -308,8 +330,9 @@ export default function App() {
 
       {!isDesktop && (
         <div className="banner">
-          Preview mode — the interface is running without the Rust core, so the
-          operation list is empty. Run <code>npm run tauri dev</code> for the real thing.
+          {isStatic
+            ? "Static preview — this is the real interface with a snapshot of the manifest. Operations marked with a captured result show what the native app produced; the rest run only in the app."
+            : "Preview mode — the interface is running without the Rust core, so the operation list is empty. Run npm run tauri dev for the real thing."}
         </div>
       )}
 

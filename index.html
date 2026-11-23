@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>savehorse — one bench, thirteen tools</title>
+<meta name="description" content="A Rust workspace that folds twenty-two small Windows utilities into thirteen modules behind one command line and one desktop app.">
+<meta property="og:title" content="savehorse — one bench, thirteen tools">
+<meta property="og:description" content="Fifty of eighty-eight operations ported and tested across Windows, macOS and Linux.">
+<meta property="og:image" content="assets/ui.png">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --bg-sunken: #07080a;
+    --bg-raised: #12151a;
+    --line: #1d222a;
+    --line-strong: #2a313c;
+    --ink: #e9edf2;
+    --ink-dim: #98a2b0;
+    --ink-faint: #5d6875;
+    --signal: #d8ff4f;
+    --signal-ink: #10130a;
+    --sans: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --max: 1080px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--signal); color: var(--signal-ink); }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--mono); }
+
+  /* ---------- top bar ---------- */
+  header.top {
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(11,13,16,.86); backdrop-filter: blur(8px);
+  }
+  .top-inner { display: flex; align-items: center; gap: 14px; height: 60px; }
+  .mark {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--signal);
+    color: var(--signal-ink); display: grid; place-items: center;
+    font-weight: 800; font-size: 15px; flex: none;
+  }
+  .wordmark { font-weight: 650; letter-spacing: -.02em; }
+  nav.top-links { margin-left: auto; display: flex; gap: 20px; font-size: 14px; }
+  nav.top-links a { color: var(--ink-dim); text-decoration: none; }
+  nav.top-links a:hover { color: var(--ink); }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 72px 0 48px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--signal); margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(34px, 5.2vw, 56px); line-height: 1.08;
+    letter-spacing: -.03em; margin: 0 0 18px; font-weight: 700;
+  }
+  h1 em { font-style: normal; color: var(--ink-faint); }
+  .lede { font-size: 18px; color: var(--ink-dim); max-width: 62ch; margin: 0 0 28px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 42px; padding: 0 20px; border-radius: 9px;
+    font-weight: 620; font-size: 15px; text-decoration: none;
+    border: 1px solid transparent; transition: filter .12s, border-color .12s;
+  }
+  .btn-primary { background: var(--signal); color: var(--signal-ink); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { border-color: var(--line-strong); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--ink-faint); }
+  .note { font-size: 13px; color: var(--ink-faint); }
+
+  /* ---------- screenshot ---------- */
+  .shot {
+    margin: 44px 0 0; border: 1px solid var(--line-strong); border-radius: 12px;
+    overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.5); background: var(--bg-sunken);
+  }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot-cap {
+    font-size: 12.5px; color: var(--ink-faint); padding: 10px 14px;
+    border-top: 1px solid var(--line); font-family: var(--mono);
+  }
+
+  /* ---------- sections ---------- */
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 {
+    font-size: 26px; letter-spacing: -.02em; margin: 0 0 8px; font-weight: 680;
+  }
+  .sub { color: var(--ink-dim); margin: 0 0 34px; max-width: 66ch; }
+
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .card {
+    border: 1px solid var(--line); border-radius: 10px; padding: 20px;
+    background: var(--bg-raised);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 640; }
+  .card p { margin: 0; color: var(--ink-dim); font-size: 14.5px; }
+  .card .n {
+    font-family: var(--mono); font-size: 12px; color: var(--signal);
+    display: block; margin-bottom: 10px;
+  }
+
+  /* ---------- modules ---------- */
+  .modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .mod {
+    display: flex; gap: 12px; align-items: flex-start;
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    text-decoration: none; transition: border-color .12s, background .12s;
+  }
+  .mod:hover { border-color: var(--line-strong); background: var(--bg-raised); }
+  .dot {
+    width: 26px; height: 26px; border-radius: 7px; flex: none;
+    display: grid; place-items: center; font-family: var(--mono);
+    font-size: 12px; font-weight: 700; background: var(--bg-sunken);
+    border: 1px solid var(--line-strong);
+  }
+  .mod-name { display: block; font-family: var(--mono); font-size: 13.5px; font-weight: 600; }
+  .mod-job { display: block; font-size: 12.5px; color: var(--ink-faint); margin-top: 2px; line-height: 1.4; }
+  .bar { display: block; height: 3px; border-radius: 2px; background: var(--line); margin-top: 8px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--signal); }
+  .mod-count { display: block; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-top: 6px; }
+
+  /* ---------- code ---------- */
+  pre {
+    background: var(--bg-sunken); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 20px; overflow-x: auto;
+    font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--ink-dim);
+  }
+  pre .c { color: var(--ink-faint); }
+  pre .k { color: var(--signal); }
+  pre .s { color: #9ee6b4; }
+
+  /* ---------- table ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-faint); font-weight: 560; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+  td.num { font-family: var(--mono); color: var(--signal); }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 34px 0 60px;
+    color: var(--ink-faint); font-size: 13.5px;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+  }
+  footer a { color: var(--ink-dim); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+  @media (max-width: 640px) {
+    .hero { padding: 48px 0 32px; }
+    nav.top-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="mark">S</div>
+    <span class="wordmark">savehorse</span>
+    <nav class="top-links">
+      <a href="#modules">Modules</a>
+      <a href="#cli">Command line</a>
+      <a href="#status">Status</a>
+      <a href="demo/">Interface demo</a>
+      <a href="https://github.com/drsamonline/savehorse">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <p class="eyebrow">Rust · thirteen modules · one binary</p>
+  <h1>One bench,<br>thirteen tools. <em>Nothing pretending.</em></h1>
+  <p class="lede">
+    savehorse folds twenty-two small Windows utilities into one Rust workspace:
+    thirteen modules behind a single command line and one desktop app, with every
+    operation declared once and tested on Windows, macOS and Linux.
+  </p>
+  <div class="cta">
+    <a class="btn btn-primary" href="demo/">Try the interface</a>
+    <a class="btn btn-ghost" href="https://github.com/drsamonline/savehorse">Read the source</a>
+  </div>
+  <p class="note">50 of 88 operations ported · 114 tests green on three platforms</p>
+
+  <figure class="shot">
+    <img src="assets/ui.png" alt="The savehorse desktop interface: a module rail on the left, a generated operation form in the middle and a result pane on the right.">
+    <figcaption class="shot-cap">The real interface, running against the real operation manifest. <a href="demo/">Open the demo →</a></figcaption>
+  </figure>
+</div>
+
+<section id="why">
+  <div class="wrap">
+    <h2>What this is</h2>
+    <p class="sub">The portfolio had 22 applications that shared one architecture and 15,000 lines of duplicated window code. This is what happens when you keep the logic and throw that away.</p>
+    <div class="cols">
+      <div class="card">
+        <span class="n">01</span>
+        <h3>One manifest, every surface</h3>
+        <p>Each operation is declared once — parameters, danger level, status. The CLI's parser and help, the app's forms and this page's numbers all read from it. A test asserts the count so the docs cannot drift.</p>
+      </div>
+      <div class="card">
+        <span class="n">02</span>
+        <h3>One runner, two front ends</h3>
+        <p>The command line and the window call the same code. Neither owns any logic, so a fix lands in both at once and they cannot quietly disagree.</p>
+      </div>
+      <div class="card">
+        <span class="n">03</span>
+        <h3>Nothing pretends to work</h3>
+        <p>An operation that is declared but not yet ported refuses by name. Destructive operations preview before they write. Where an original was a simulation, it says so.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="modules">
+  <div class="wrap">
+    <h2>Thirteen modules</h2>
+    <p class="sub">Grouped by the job, not by how the code was written. Each keeps the name it had on its own, and the bar shows how much of it has been ported.</p>
+    <div class="modules">
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#ffb340">A</span><span><span class="mod-name">aegis</span><span class="mod-job">Encrypt, shred, scan and audit</span><span class="bar"><span style="width:0%"></span></span><span class="mod-count">0 / 6 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#ff7a5c">F</span><span><span class="mod-name">forge</span><span class="mod-job">Inspect and patch executables</span><span class="bar"><span style="width:100%"></span></span><span class="mod-count">6 / 6 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#b98bff">H</span><span><span class="mod-name">halo</span><span class="mod-job">Author, read and convert disc images</span><span class="bar"><span style="width:71%"></span></span><span class="mod-count">5 / 7 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#ff6fa5">I</span><span><span class="mod-name">iris</span><span class="mod-job">Inspect, convert and transform images</span><span class="bar"><span style="width:75%"></span></span><span class="mod-count">6 / 8 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#5ac8fa">A</span><span><span class="mod-name">arc</span><span class="mod-job">Pack, split, join and transfer</span><span class="bar"><span style="width:60%"></span></span><span class="mod-count">6 / 10 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#d8ff4f">S</span><span><span class="mod-name">sift</span><span class="mod-job">Find, extract and replace across files</span><span class="bar"><span style="width:100%"></span></span><span class="mod-count">9 / 9 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#9ee6b4">G</span><span><span class="mod-name">glyph</span><span class="mod-job">PDF, Markdown and readability</span><span class="bar"><span style="width:86%"></span></span><span class="mod-count">6 / 7 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#6fd6c4">S</span><span><span class="mod-name">scout</span><span class="mod-job">Catalogue, deduplicate and compare</span><span class="bar"><span style="width:50%"></span></span><span class="mod-count">3 / 6 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#c9a7ff">M</span><span><span class="mod-name">morph</span><span class="mod-job">Batch rename with preview and undo</span><span class="bar"><span style="width:100%"></span></span><span class="mod-count">2 / 2 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#ffd166">P</span><span><span class="mod-name">pulse</span><span class="mod-job">Hardware, processes and maintenance</span><span class="bar"><span style="width:0%"></span></span><span class="mod-count">0 / 7 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#7aa7ff">P</span><span><span class="mod-name">pager</span><span class="mod-job">Snap, pin and arrange windows</span><span class="bar"><span style="width:0%"></span></span><span class="mod-count">0 / 9 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#7de08a">R</span><span><span class="mod-name">revive</span><span class="mod-job">Carve, recover and verify snapshots</span><span class="bar"><span style="width:100%"></span></span><span class="mod-count">7 / 7 ported</span></span></a>
+      <a class="mod" href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md"><span class="dot" style="color:#ff9f68">F</span><span><span class="mod-name">flux</span><span class="mod-job">Inspect, tag and shape audio</span><span class="bar"><span style="width:0%"></span></span><span class="mod-count">0 / 4 ported</span></span></a>
+    </div>
+  </div>
+</section>
+
+<section id="cli">
+  <div class="wrap">
+    <h2>Every action has a command line</h2>
+    <p class="sub">The app shows the equivalent command under every form, so what you learn in the window works in a script. Same binary, same code.</p>
+<pre><span class="c"># find a string across a tree, as a literal or a regex</span>
+<span class="k">savehorse</span> sift search <span class="s">"TODO"</span> ./src --regex
+
+<span class="c"># replace across files — preview first, then apply</span>
+<span class="k">savehorse</span> sift replace old_name new_name ./src --dry-run
+<span class="k">savehorse</span> sift replace old_name new_name ./src --backup
+
+<span class="c"># catalogue a folder, then reclaim the duplicates</span>
+<span class="k">savehorse</span> scout catalog ~/Pictures --format markdown --out catalog.md
+<span class="k">savehorse</span> scout duplicates ~/Downloads
+<span class="k">savehorse</span> scout clean ~/Downloads --commit
+
+<span class="c"># build an ISO, verify it, then restore it</span>
+<span class="k">savehorse</span> halo create ./disc --out disc.iso --volume-id BACKUP
+<span class="k">savehorse</span> halo verify disc.iso
+<span class="k">savehorse</span> revive pack ./disc --out disc.chronos
+
+<span class="c"># carve files out of a blob, and read a PE header</span>
+<span class="k">savehorse</span> revive carve disk.img --out recovered
+<span class="k">savehorse</span> forge inspect app.exe
+
+<span class="c"># rename a batch, with an undo journal</span>
+<span class="k">savehorse</span> morph rename ./photos --case title --number --journal undo.json</pre>
+  </div>
+</section>
+
+<section id="status">
+  <div class="wrap">
+    <h2>Status, honestly</h2>
+    <p class="sub">This is a migration in progress, not a finished product. The numbers below are asserted by a test in the repository, so they cannot quietly go stale.</p>
+    <table>
+      <tr><th>Measure</th><th>Now</th></tr>
+      <tr><td>Modules</td><td class="num">13</td></tr>
+      <tr><td>Operations declared in the manifest</td><td class="num">88</td></tr>
+      <tr><td>Operations ported and tested</td><td class="num">50</td></tr>
+      <tr><td>Tests, on Windows, macOS and Linux</td><td class="num">114</td></tr>
+      <tr><td>Modules fully ported</td><td class="num">4 of 13</td></tr>
+      <tr><td>Desktop app</td><td class="num">Tauri 2 + React</td></tr>
+    </table>
+    <p class="sub" style="margin-top:26px">
+      Still to come: <span class="mono">aegis</span> (6), <span class="mono">pulse</span> (7) and
+      <span class="mono">pager</span> (9) need per-platform system and window APIs, and
+      <span class="mono">flux</span> (4) plus the remainder of <span class="mono">scout</span>,
+      <span class="mono">arc</span>, <span class="mono">halo</span>, <span class="mono">iris</span>
+      and <span class="mono">glyph</span> make up the rest.
+    </p>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <div class="mark" style="width:24px;height:24px;border-radius:6px;font-size:12px">S</div>
+    <span>savehorse · PolyForm Noncommercial 1.0.0</span>
+    <span style="margin-left:auto;display:flex;gap:18px">
+      <a href="https://github.com/drsamonline/savehorse">GitHub</a>
+      <a href="https://github.com/drsamonline/savehorse/blob/main/PLAN.md">Plan</a>
+      <a href="https://github.com/drsamonline/savehorse/blob/main/docs/CAPABILITY-MATRIX.md">Capability matrix</a>
+    </span>
+  </footer>
+</div>
+
+</body>
+</html>

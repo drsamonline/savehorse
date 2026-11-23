@@ -39,6 +39,19 @@ jobs:
       - name: Fail if the build produced nothing
         run: test -f dist/index.html
 
+      # The static demo in demo/ is a build of this app. If the app or the
+      # registry changed and the demo was not rebuilt, the published page is
+      # showing an older interface than the source.
+      - name: Demo is up to date
+        working-directory: .
+        run: |
+          bash scripts/build-demo.sh
+          if ! git diff --quiet -- demo; then
+            echo "::error::demo/ is out of date. Run scripts/build-demo.sh and commit the result."
+            git --no-pager diff --stat -- demo
+            exit 1
+          fi
+
   # The Rust shell needs system libraries that the CLI does not, so it is
   # checked separately rather than slowing the main build down.
   shell:

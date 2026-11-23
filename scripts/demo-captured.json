@@ -1,0 +1,21 @@
+{
+ "sift.search": "smoke/a.txt:1: alpha beta\nsmoke/a.txt:2: second line alpha\nsmoke/nested/copy.txt:1: alpha beta\nsmoke/nested/copy.txt:2: second line alpha\n4 match(es)",
+ "sift.strings": "0x00000000  ASCII     alpha beta\n0x0000000b  ASCII     second line alpha\n2 string(s)",
+ "sift.replace": "[preview] smoke/a.txt: would replace 1 occurrence(s)\n[preview] smoke/nested/copy.txt: would replace 1 occurrence(s)\npreview: 2 replacement(s) in 2 file(s). Re-run without --dry-run to apply.",
+ "sift.view": "     1 | line one\n     2 | line two\n     3 |\n     4 |\n     5 | line three",
+ "sift.stats": "file       smoke/messy.txt\nbytes      34\ncharacters 32\nwords      6\nunique     6\nlines      5\nempty      2\navg word   4.17\nlongest    10",
+ "scout.duplicates": "Duplicate scan of 'smoke':\n  clusters           : 1\n  redundant files    : 1\n  recoverable space  : 29 B\n\nCluster #1: sha256=e91f893d8a22acd2 (29 B each)\n  keep      smoke/a.txt\n  duplicate smoke/nested/copy.txt\n  wasted    29 B",
+ "scout.clean": "Preview: nothing has been deleted.\n  would remove smoke/nested/copy.txt\n\n1 file(s), 29 B reclaimable. Re-run with --commit to delete.",
+ "glyph.extract": "Smoke Test\nfirst line\nsecond line\n-- 1 page(s), 3 line(s) extracted",
+ "glyph.readability": "words      4\ncharacters 23\nsentences  1\navg word   4.8\nreading    ~0.02 min at 200 wpm",
+ "halo.list": "image      smoke/test.iso\nvolume     SMOKE\nsectors    23 (46 KB)\n\nNAME                         SECTOR     BYTES\n--------------------------------------------------------\nNOTES.TXT                    21         8\nREADME.TXT                   22         10\n--------------------------------------------------------\n2 file(s)",
+ "halo.create": "created 'smoke/test.iso' — 2 file(s), 23 sector(s), 47104 byte(s), volume 'SMOKE'\n  NOTES.TXT                    sector 21       8 byte(s)\n  README.TXT                   sector 22       10 byte(s)",
+ "iris.info": "file       smoke/px.png\nformat     PNG\nsize       1x1\naspect     1:1 (1)\ncolour     32-bit RGBA\nbytes      70",
+ "iris.stats": "file       smoke/px.png\nsize       1x1 (1 pixels)\nred        255\ngreen      0\nblue       0\nalpha      127\nluminance  54.21",
+ "arc.list": "created 'smoke/tree.zip' — 2 file(s), 18 -> 250 byte(s), deflate\nOK 'smoke/tree.zip' — all 2 entr(ies) read cleanly",
+ "forge.hexdump": "00000000  89 50 4E 47 0D 0A 1A 0A  00 00 00 0D 49 48 44 52  |.PNG........IHDR|\n00000010  00 00 00 01 00 00 00 01  08 06 00 00 00 1F 15 C4  |................|\n2 line(s)",
+ "forge.search": "1 match(es)\n  0x00000000",
+ "revive.scan": "artifacts     1\nrecoverable   70 bytes\n\nBY FORMAT\n  PNG Image              1 file(s)          70 bytes\n\nFILES\n  #1    PNG Image        0x000000C8         70 bytes  sha256 c414cd0e204de974",
+ "morph.rename": "renamed 2 of 2 file(s)\n  one.txt -> ONE.txt\n  two.txt -> TWO.txt\nundo journal: smoke/ren/journal.json",
+ "sift.eol": "file       smoke/messy.txt\nCRLF       0\nLF         5\nCR         0\ndominant   LF (Unix)\nno conversion asked for"
+}
