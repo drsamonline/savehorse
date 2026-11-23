@@ -601,7 +601,7 @@ mod tests {
 
     /// A minimal but structurally valid PE32 file, enough for the header reader.
     fn minimal_pe() -> Vec<u8> {
-        let mut pe = vec![0u8; 0x200];
+        let mut pe = vec![0u8; 0x300];
 
         // DOS header
         pe[0] = b'M';
@@ -629,11 +629,13 @@ mod tests {
         pe[sec + 8..sec + 12].copy_from_slice(&0x100u32.to_le_bytes()); // virtual size
         pe[sec + 12..sec + 16].copy_from_slice(&0x1000u32.to_le_bytes()); // virtual address
         pe[sec + 16..sec + 20].copy_from_slice(&0x100u32.to_le_bytes()); // raw size
-        pe[sec + 20..sec + 24].copy_from_slice(&0x100u32.to_le_bytes()); // raw offset
+        // Raw data must sit past the headers: the section table ends at
+        // 0x188, and overlapping it makes the optional header read as garbage.
+        pe[sec + 20..sec + 24].copy_from_slice(&0x200u32.to_le_bytes()); // raw offset
         pe[sec + 36..sec + 40].copy_from_slice(&0x6000_0020u32.to_le_bytes()); // code|exec|read
 
-        // Some bytes in the section body.
-        for (i, b) in pe[0x100..0x140].iter_mut().enumerate() {
+        // Some bytes in the section body, past the header block.
+        for (i, b) in pe[0x200..0x300].iter_mut().enumerate() {
             *b = (i % 251) as u8;
         }
 
