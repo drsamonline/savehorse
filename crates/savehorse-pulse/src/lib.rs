@@ -460,6 +460,18 @@ fn native_for(level: &str) -> Result<(&'static str, i64)> {
     Ok(pair)
 }
 
+/// How this platform names the level: a priority class on Windows, a nice
+/// value on Unix. Showing `IDLE_PRIORITY_CLASS` on Linux would be a lie about
+/// what the tool just asked the kernel to do.
+fn describe(level: &str) -> Result<String> {
+    let (name, nice) = native_for(level)?;
+    if cfg!(windows) {
+        Ok(name.to_string())
+    } else {
+        Ok(format!("nice {}", nice))
+    }
+}
+
 /// True when the level is above normal, which needs privileges on Unix.
 pub fn needs_privilege(level: &str) -> bool {
     matches!(
@@ -523,8 +535,7 @@ fn apply(pid: u32, level: &str) -> Result<String> {
         }
     }
 
-    let (name, _) = native_for(level)?;
-    Ok(name.to_string())
+    describe(level)
 }
 
 #[cfg(unix)]
@@ -575,12 +586,11 @@ pub fn set_priority(pid: u32, level: &str, dry_run: bool) -> Result<PriorityRepo
     }
 
     if dry_run {
-        let (name, nice) = native_for(level)?;
         return Ok(PriorityReport {
             pid,
             level: level.to_string(),
             applied: false,
-            native: format!("{} ({} would be nice {})", name, level, nice),
+            native: describe(level)?,
             detail: "dry run: nothing was changed".to_string(),
         });
     }
@@ -666,7 +676,11 @@ mod tests {
         assert_eq!(report.pid, pid);
         assert!(!report.applied, "a dry run must not apply");
         assert!(report.detail.contains("nothing was changed"));
-        assert!(report.native.contains("nice 19"));
+        assert!(
+            report.native.contains("19") || report.native.contains("IDLE"),
+            "the native name should describe this platform, got: {}",
+            report.native
+        );
     }
 
     #[test]
