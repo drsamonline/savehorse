@@ -742,7 +742,8 @@ mod tests {
     #[test]
     fn type_filter_limits_what_is_found() {
         let mut blob = png_bytes();
-        blob.extend_from_slice(b"%PDF-1.4 something %%EOF");
+        // Comfortably over the 32-byte default minimum artefact size.
+        blob.extend_from_slice(b"%PDF-1.4 a document body here %%EOF");
 
         let all = scan_signatures(&blob, None, None, None);
         assert!(all.len() >= 2, "got {:?}", all);
@@ -781,7 +782,7 @@ mod tests {
     #[test]
     fn report_lists_formats_and_totals() {
         let mut blob = png_bytes();
-        blob.extend_from_slice(b"%PDF-1.4 x %%EOF");
+        blob.extend_from_slice(b"%PDF-1.4 a document body here %%EOF");
 
         let dir = scratch("report");
         let source = dir.join("blob.bin");
