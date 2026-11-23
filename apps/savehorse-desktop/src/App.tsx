@@ -298,11 +298,14 @@ export default function App() {
     setToast(`Filled ${target.name} with ${file.name}`);
   }
 
+  // Every required parameter, positional or flag. Checking only the
+  // positionals let Run enable while a required flag like --out was empty,
+  // so the button worked and the operation then refused.
   const canRun = Boolean(
     currentOp &&
       currentOp.status === "implemented" &&
       currentOp.params
-        .filter((p) => p.positional && p.required)
+        .filter((p) => p.required && p.kind !== "Bool")
         .every((p) => (values[p.name] ?? "").trim() !== ""),
   );
 
