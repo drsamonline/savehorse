@@ -53,6 +53,19 @@ jobs:
       - name: Test
         run: cargo test --workspace --verbose
 
+      # Report only for now: it tells us whether the committed captures still
+      # match what the tool prints, without failing the build on the first run.
+      - name: Are the demo's captured outputs current?
+        shell: bash
+        continue-on-error: true
+        run: |
+          bash scripts/capture_demo.sh /tmp/captured.json
+          if diff -u scripts/demo-captured.json /tmp/captured.json; then
+            echo "captured outputs match"
+          else
+            echo "::warning::scripts/demo-captured.json differs from a fresh capture"
+          fi
+
       - name: Smoke test the CLI
         shell: bash
         run: |
