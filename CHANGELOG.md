@@ -4,6 +4,25 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `scripts/check_docs.py`, run in CI: every `savehorse ...` command in the
+  documentation is parsed against the manifest, so an example that does not
+  parse cannot be merged.
+
+### Fixed
+
+- `--commit` was rejected on operations that did not declare it, including
+  `pulse priority`, which the guide documents. It is a global switch beside
+  `--dry-run` now.
+- The documentation claimed the passphrase is prompted for. It is not, and
+  never was; the examples show a value.
+- The run button enabled while a required flag such as `--out` was still empty.
+- Five colour pairs failed WCAG AA contrast; the landing page had no
+  `:focus-visible` rule at all.
+
 ## [0.2.0] — 2026-11-23
 
 Every operation in the manifest is now ported. Nothing is declared and waiting.

@@ -6,6 +6,26 @@ Source archives: `releases.7z` (generation 1, eleven apps) and `releases.7z.001`
 (generation 2, eleven apps). Twenty-two applications, 29,630 lines of Rust,
 folded into thirteen modules.
 
+
+## How this is verified
+
+"Ready" means ported and reachable. What actually proves it varies, and it is
+worth being precise about which is which.
+
+| Layer | Covers |
+|---|---|
+| Unit tests, 175 of them, on Windows, macOS and Linux | Every module's logic: parsers, geometry, error paths, the manifest invariant |
+| CI smoke test | 80 of the 87 operations, run end to end through the CLI on real fixtures |
+| Unit test with a crafted PE | `forge.sections`, which the smoke cannot reach without a real binary |
+| Nothing automated | `pager.snap`, `move`, `pin`, `switch`, `rollup`, `alpha` |
+
+The six `pager` operations that act on another application's window need a
+window manager and a desktop session, which a CI runner does not have. Their
+geometry is unit tested (`snap_rect` against odd widths, offsets and empty work
+areas), and the platform calls are proven to compile on all three targets, but
+nothing has ever snapped a real window in an automated run. That is the largest
+untested surface in the project.
+
 Status values: **ready** — ported, tested, callable today. **planned** — declared
 in the manifest, code not yet moved.
 

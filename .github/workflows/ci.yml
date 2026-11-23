@@ -67,6 +67,9 @@ jobs:
           cargo run --quiet -- sift search alpha smoke
           cargo run --quiet -- sift strings smoke/a.txt --min-len 4
           cargo run --quiet -- sift replace beta gamma smoke --dry-run
+          # xor: a known plaintext, XOR'd with one key, recovered by searching
+          python3 -c "open('smoke/xored.bin','wb').write(bytes(b ^ 0x5A for b in b'the quick brown fox'))"
+          cargo run --quiet -- sift xor "the quick brown fox" smoke/xored.bin | grep -q "key"
           cargo run --quiet -- scout catalog smoke --format json
           cargo run --quiet -- scout duplicates smoke
           cargo run --quiet -- scout clean smoke
@@ -84,6 +87,10 @@ jobs:
           cargo run --quiet -- glyph metrics smoke/text.txt
 
           # halo
+          # convert takes 2352-byte raw sectors and keeps bytes 16..2064 of each
+          python3 -c "open('smoke/raw.bin','wb').write(bytes(2352 * 2))"
+          cargo run --quiet -- halo convert smoke/raw.bin --out smoke/sector.bin
+          test "$(wc -c < smoke/sector.bin)" -eq 4096
           mkdir -p smoke/iso
           printf 'hello iso\n' > smoke/iso/readme.txt
           printf 'payload\n' > smoke/iso/notes.txt
@@ -112,6 +119,7 @@ jobs:
           cargo run --quiet -- arc test smoke/tree.zip
           cargo run --quiet -- arc extract smoke/tree.zip --out smoke/unzipped
           test -f smoke/unzipped/iso/readme.txt
+          cargo run --quiet -- arc torrent smoke/a.txt
           cargo run --quiet -- arc split smoke/test.iso --size 16k --out smoke/parts
           cargo run --quiet -- arc join smoke/parts/test.iso.manifest.json --out smoke/rejoined.iso
           cmp smoke/test.iso smoke/rejoined.iso
@@ -141,6 +149,10 @@ jobs:
           test -s smoke/messy-bom.txt
 
           # forge
+          # imports is a string heuristic, not an import-table walk, so a file
+          # holding DLL names is enough to exercise it.
+          printf 'KERNEL32.dll\000USER32.dll\000readme.txt\000' > smoke/dlls.bin
+          cargo run --quiet -- forge imports smoke/dlls.bin | grep -q KERNEL32.dll
           cargo run --quiet -- forge hexdump smoke/px.png --length 32
           cargo run --quiet -- forge search smoke/px.png --hex "89504E47"
           cargo run --quiet -- forge patch smoke/px.png --offset 0 --hex "89504E47" --dry-run
