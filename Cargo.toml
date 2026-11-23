@@ -1,11 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/shavehorse-core",
-    "crates/shavehorse-registry",
-    "crates/shavehorse-sift",
-    "crates/shavehorse-scout",
-    "apps/shavehorse-cli",
+    "crates/savehorse-core",
+    "crates/savehorse-registry",
+    "crates/savehorse-sift",
+    "crates/savehorse-scout",
+    "apps/savehorse-cli",
 ]
 
 [workspace.package]
@@ -17,10 +17,10 @@ repository = "https://github.com/drsamonline/savehorse"
 authors = ["Dr Sohil Momin"]
 
 [workspace.dependencies]
-shavehorse-core = { path = "crates/shavehorse-core" }
-shavehorse-registry = { path = "crates/shavehorse-registry" }
-shavehorse-sift = { path = "crates/shavehorse-sift" }
-shavehorse-scout = { path = "crates/shavehorse-scout" }
+savehorse-core = { path = "crates/savehorse-core" }
+savehorse-registry = { path = "crates/savehorse-registry" }
+savehorse-sift = { path = "crates/savehorse-sift" }
+savehorse-scout = { path = "crates/savehorse-scout" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -11,7 +11,7 @@
 //!    caller can undo or audit.
 
 use serde::{Deserialize, Serialize};
-use shavehorse_core::{format_bytes, Error, Result, WalkOptions};
+use savehorse_core::{format_bytes, Error, Result, WalkOptions};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -101,7 +101,7 @@ impl ExportFormat {
 
 /// Walk `root` and describe every file in it.
 pub fn build_catalog(root: &Path, opts: &WalkOptions) -> Result<Vec<CatalogEntry>> {
-    let files = shavehorse_core::walk_files(root, opts)?;
+    let files = savehorse_core::walk_files(root, opts)?;
     let mut entries = Vec::with_capacity(files.len());
 
     for path in files {
@@ -274,7 +274,7 @@ pub fn find_duplicates(
 
         let mut by_hash: HashMap<String, Vec<String>> = HashMap::new();
         for path in paths {
-            if let Ok(hash) = shavehorse_core::sha256_file(&path) {
+            if let Ok(hash) = savehorse_core::sha256_file(&path) {
                 by_hash
                     .entry(hash)
                     .or_default()
@@ -358,7 +358,7 @@ mod tests {
 
     fn scratch(name: &str) -> PathBuf {
         let mut p = std::env::temp_dir();
-        p.push(format!("shavehorse-scout-{}-{}", name, std::process::id()));
+        p.push(format!("savehorse-scout-{}-{}", name, std::process::id()));
         let _ = fs::remove_dir_all(&p);
         fs::create_dir_all(&p).unwrap();
         p

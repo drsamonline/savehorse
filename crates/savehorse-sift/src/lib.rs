@@ -13,7 +13,7 @@
 
 use regex::{Regex, RegexBuilder};
 use serde::Serialize;
-use shavehorse_core::{Error, Result, WalkOptions};
+use savehorse_core::{Error, Result, WalkOptions};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -175,7 +175,7 @@ fn build_matcher(pattern: &str, is_regex: bool, ignore_case: bool) -> Result<Reg
 fn expand(paths: &[PathBuf]) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     for root in paths {
-        let found = shavehorse_core::walk_files(
+        let found = savehorse_core::walk_files(
             root,
             &WalkOptions {
                 include_hidden: true,
@@ -362,7 +362,7 @@ mod tests {
 
     fn scratch(name: &str) -> PathBuf {
         let mut p = std::env::temp_dir();
-        p.push(format!("shavehorse-sift-{}-{}", name, std::process::id()));
+        p.push(format!("savehorse-sift-{}-{}", name, std::process::id()));
         let _ = fs::remove_dir_all(&p);
         fs::create_dir_all(&p).unwrap();
         p

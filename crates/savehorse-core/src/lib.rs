@@ -1,4 +1,4 @@
-//! Shared foundation for every shavehorse module.
+//! Shared foundation for every savehorse module.
 //!
 //! Nothing in here knows about a command line, a window, or a particular
 //! module. Everything returns data or an [`Error`]; printing is the caller's
@@ -300,7 +300,7 @@ mod tests {
 
     fn scratch(name: &str) -> PathBuf {
         let mut p = std::env::temp_dir();
-        p.push(format!("shavehorse-core-{}-{}", name, std::process::id()));
+        p.push(format!("savehorse-core-{}-{}", name, std::process::id()));
         let _ = fs::remove_dir_all(&p);
         fs::create_dir_all(&p).expect("create scratch dir");
         p
@@ -398,7 +398,7 @@ mod tests {
 
     #[test]
     fn walk_errors_on_missing_root() {
-        let missing = std::env::temp_dir().join("shavehorse-does-not-exist-xyz");
+        let missing = std::env::temp_dir().join("savehorse-does-not-exist-xyz");
         assert!(walk_files(&missing, &WalkOptions::default()).is_err());
     }
 

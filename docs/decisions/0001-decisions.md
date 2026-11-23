@@ -78,7 +78,7 @@ cross-platform `sysinfo` crate rather than hand-rolled Win32 calls.
 ## 0005 — The operation manifest is the source of truth
 
 **Decision.** Every operation is declared once, in
-`crates/shavehorse-registry`, with its parameters, danger level and status.
+`crates/savehorse-registry`, with its parameters, danger level and status.
 
 **Why.** Eighty-eight operations would otherwise mean eighty-eight hand-written
 argument parsers, eighty-eight hand-written forms and eighty-eight places for

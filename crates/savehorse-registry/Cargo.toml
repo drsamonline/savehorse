@@ -1,6 +1,6 @@
 [package]
-name = "shavehorse-registry"
-description = "The operation manifest: every shavehorse operation declared once, so the CLI, the desktop forms and the docs cannot drift apart."
+name = "savehorse-registry"
+description = "The operation manifest: every savehorse operation declared once, so the CLI, the desktop forms and the docs cannot drift apart."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

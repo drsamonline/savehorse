@@ -1,5 +1,5 @@
 [package]
-name = "shavehorse-sift"
+name = "savehorse-sift"
 description = "Text and search: string extraction, recursive search, batch replacement and XOR recovery."
 version.workspace = true
 edition.workspace = true
@@ -9,6 +9,6 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-shavehorse-core.workspace = true
+savehorse-core.workspace = true
 regex.workspace = true
 serde.workspace = true

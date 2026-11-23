@@ -235,5 +235,5 @@ what it is.
 | Operations ready | 7 |
 | Operations planned | 81 |
 
-The manifest in `crates/shavehorse-registry/src/lib.rs` is the source of truth;
+The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

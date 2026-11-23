@@ -1,6 +1,6 @@
 [package]
-name = "shavehorse-core"
-description = "Shared foundation for every shavehorse module: errors, byte sizes, hashing, directory walking and path safety."
+name = "savehorse-core"
+description = "Shared foundation for every savehorse module: errors, byte sizes, hashing, directory walking and path safety."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

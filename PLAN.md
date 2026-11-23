@@ -1,4 +1,4 @@
-# Shavehorse — Unified Rust Tool Suite
+# Savehorse — Unified Rust Tool Suite
 ### Consolidation, modernisation and repository plan
 
 **Prepared for:** Dr Sohil Momin
@@ -93,25 +93,25 @@ Two judgement calls I want to flag:
 
 ## 4. Repository decision: one repo
 
-**Create one repository: `shavehorse`** (private, or public — your call, but decide before I push).
+**Create one repository: `savehorse`** (private, or public — your call, but decide before I push).
 
 Reasons against splitting into 13 repos: they share one core library, one design system, one CI matrix and one release cadence. Thirteen repos would mean thirteen places to bump the shared crate and thirteen CIs to keep green.
 
 ```
-shavehorse/
+savehorse/
 ├── Cargo.toml                     workspace
 ├── rust-toolchain.toml
 ├── crates/
-│   ├── shavehorse-core/              shared: errors, safe paths, walker, hashing,
+│   ├── savehorse-core/              shared: errors, safe paths, walker, hashing,
 │   │                              progress events, JSON envelope, dry-run guard
-│   ├── shavehorse-aegis/             one crate per module
-│   ├── shavehorse-forge/
+│   ├── savehorse-aegis/             one crate per module
+│   ├── savehorse-forge/
 │   ├── … (13 module crates)
-│   └── shavehorse-registry/          the op manifest — single source of truth
+│   └── savehorse-registry/          the op manifest — single source of truth
 ├── apps/
-│   ├── shavehorse-cli/               binary `shavehorse <module> <op>`
-│   ├── shavehorse-desktop/           Tauri 2 shell + React UI
-│   └── shavehorse-agent/             tray agent for Pager (optional, Phase 6)
+│   ├── savehorse-cli/               binary `savehorse <module> <op>`
+│   ├── savehorse-desktop/           Tauri 2 shell + React UI
+│   └── savehorse-agent/             tray agent for Pager (optional, Phase 6)
 ├── docs/
 │   ├── PLAN.md                    this document
 │   ├── CAPABILITY-MATRIX.md       every op, old → new
@@ -120,7 +120,7 @@ shavehorse/
 └── README.md
 ```
 
-The only case for a second repo is `shavehorse-agent`, and only if Pager grows into a standalone product. Not now.
+The only case for a second repo is `savehorse-agent`, and only if Pager grows into a standalone product. Not now.
 
 ### The one engineering idea that makes this work
 
@@ -171,7 +171,7 @@ The current GUIs are hand-painted Win32 windows. Rebuilding that pattern 13 more
 │  ◐   │  Passphrase ●●●●●●●●●    │  │ in       2.4 MB        │  │
 │  ▢   │  Keyfile  [ none      ]  │  │ out      2.4 MB        │  │
 │  ◇   │                          │  └────────────────────────┘  │
-│  ●   │  [ Preview ] [ Run ]     │  shavehorse aegis encrypt  ⧉ │
+│  ●   │  [ Preview ] [ Run ]     │  savehorse aegis encrypt  ⧉ │
 │      ├──────────────────────────┴──────────────────────────────┤
 │      │  JOBS   ✓ 14:22 aegis.encrypt  2.4MB  1.2s              │
 │      │         ⟳ 14:23 revive.carve   scanning…  [cancel]      │
@@ -182,7 +182,7 @@ The current GUIs are hand-painted Win32 windows. Rebuilding that pattern 13 more
 
 1. **Command palette over all ~88 operations.** Type "shred", "iso", "carve" and you are there. No hunting through menus. This is the primary navigation, not a bonus.
 2. **Drop anything on the canvas.** The file's magic bytes decide what you probably want: a `.bin` offers Forge hexdump, Halo sector convert and Revive carve; a `.pdf` offers Glyph extract. Three suggestions, one click.
-3. **Recipes.** Chain operations into a saved pipeline — *catalogue → rename → archive → encrypt* — then re-run it on a folder, from the GUI or `shavehorse recipe run`. This turns 22 tools into an automation tool.
+3. **Recipes.** Chain operations into a saved pipeline — *catalogue → rename → archive → encrypt* — then re-run it on a folder, from the GUI or `savehorse recipe run`. This turns 22 tools into an automation tool.
 4. **Every action shows its CLI equivalent**, copyable. Discoverability for the GUI, automation for the terminal, and it documents itself.
 5. **Dry-run by default on anything destructive** — shred, byte patch, batch replace, rename. You see a diff or preview and commit explicitly. Given these tools touch files irreversibly, this is not optional polish.
 6. **Schema-driven forms.** The UI is generated from the op manifest, so every operation gets correct controls, validation, help text and danger warnings without per-screen work.
@@ -196,7 +196,7 @@ Each phase ends with something runnable and a check you can verify.
 | Phase | Work | Exit criterion |
 |---|---|---|
 | **P0** Discovery | This document, capability matrix, decision records | You approve |
-| **P1** Foundation | Workspace, `shavehorse-core`, op manifest, CLI skeleton with legacy aliases (`aegis …` still works). Port **Sift** and **Scout** first | `shavehorse sift search`, `shavehorse scout catalog` pass golden-file tests |
+| **P1** Foundation | Workspace, `savehorse-core`, op manifest, CLI skeleton with legacy aliases (`aegis …` still works). Port **Sift** and **Scout** first | `savehorse sift search`, `savehorse scout catalog` pass golden-file tests |
 | **P2** Module port | Move all 22 cores into 13 crates. Strip Win32. Replace Gen 1 hand-rolled crypto/CRC/PRNG with real crates. Add tests per op | Every op has ≥1 test; `cargo test` green on win/mac/linux |
 | **P3** Desktop shell | Tauri app, design system, palette, split view, job dock. Ship 4 modules fully, then the rest | App runs on all three OSes; 13 modules reachable |
 | **P4** Differentiators | Recipes, drop-suggest, CLI echo, dry-run previews, history | A recipe can chain 3 modules end to end |
@@ -208,7 +208,7 @@ Each phase ends with something runnable and a check you can verify.
 ### First push (after you create the repo)
 
 1. `PLAN.md`, `CAPABILITY-MATRIX.md`, decision records
-2. Workspace skeleton + `shavehorse-core` with tests
+2. Workspace skeleton + `savehorse-core` with tests
 3. Op-manifest crate with the full 88-operation registry declared
 4. Two modules ported and tested end to end (Sift, Scout)
 5. CLI that builds and runs
@@ -236,30 +236,41 @@ I can compile and test the portable crates in my environment (Rust toolchain ins
 
 ## 8. What I need from you
 
-**Create this repository:** `shavehorse` — and tell me the owner/org name and whether it is public or private.
+**Repository:** `drsamonline/savehorse` — created, public, and the spine is pushed.
 
 Then confirm these four decisions, or override them:
 
 | # | Decision | My recommendation |
 |---|---|---|
-| 1 | Repo shape | **One monorepo, `shavehorse`** |
+| 1 | Repo shape | **One monorepo, `savehorse`** |
 | 2 | GUI stack | **Tauri 2 + React + TS** (fallback: pure-Rust egui) |
 | 3 | Platform | **Windows + macOS + Linux** (18 of 22 cores already portable) |
 | 4 | Licence | Keep PolyForm NC for now — **change if you ever plan to sell** |
 
-**The name: `shavehorse`.** A shave horse is the wooden bench a chairmaker sits on — it clamps the workpiece with a foot pedal so both hands stay free for the tool. That is what this suite is: one bench that holds the work while thirteen tools do the shaping. Each module keeps its own name inside it.
+**The name: `savehorse`.** Chosen by you; the repository is
+[drsamonline/savehorse](https://github.com/drsamonline/savehorse).
 
-I checked it before proposing it, because the first three names I liked were already taken:
+It is verified clear as a software name:
+
+| Check | Result |
+|---|---|
+| crates.io | free |
+| npm | free |
+| GitHub repositories with that name | 1 — this one |
+| Existing software product | none found |
+
+The names that were considered and rejected, for the record:
 
 | Candidate | Verdict |
 |---|---|
-| tessera | **taken — your own repo `drsamonline/tessera`** |
+| tessera | taken — your own repo `drsamonline/tessera` |
 | spokeshave | software product exists at spokeshave.lotlsoft.com |
 | handplane | software product exists — Handplane Baker (handplane3d.com) |
-| toolwright | heavily taken: toolwright.com is *138 file tools*, plus .io, .co.uk, .studio, GitHub org |
+| toolwright | heavily taken: toolwright.com is *138 file tools*, plus .io, .co.uk, .studio, a GitHub org |
 | cairn, kerf, adze, awl, auger, basalt, orrery, bezel | crate name taken or 500+ repos using it |
-| **shavehorse** | **free on crates.io, free on npm, 0 GitHub repos, no software product — every web hit is a woodworking bench** |
 
-If you would rather have something shorter, the two next-best verified-free options are **`whittler`** (free on both registries, 10 GitHub repos) and **`quillon`** (free on both, 64 repos). One word and I will rename everything before the first push — it is a find-and-replace at this stage, and expensive later.
+The metaphor survives the spelling: a shave horse is the bench a chairmaker
+sits on, clamping the work with a foot pedal so both hands stay free for the
+tool. One bench, thirteen tools, each keeping its own name.
 
 Once the repo exists and these are settled, I push the first commit and we start on P1.

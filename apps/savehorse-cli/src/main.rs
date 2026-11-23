@@ -2,7 +2,7 @@
 //!
 //! `savehorse <module> <op> [arguments]`
 //!
-//! Every operation is looked up in `shavehorse-registry` before anything runs,
+//! Every operation is looked up in `savehorse-registry` before anything runs,
 //! so an operation that is declared but not yet ported says so plainly instead
 //! of failing somewhere deeper.
 
@@ -10,8 +10,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use shavehorse_core::{parse_size, Error, Result};
-use shavehorse_registry as registry;
+use savehorse_core::{parse_size, Error, Result};
+use savehorse_registry as registry;
 
 /// Flags that never take a value. Anything else is treated as `--key value`.
 const BOOL_FLAGS: &[&str] = &[
@@ -246,7 +246,7 @@ fn sift_strings(inv: &Invocation) -> Result<ExitCode> {
     let ascii_only = inv.has("ascii");
     let unicode_only = inv.has("unicode");
 
-    let entries = shavehorse_sift::extract_strings(&path, min_len, ascii_only, unicode_only)?;
+    let entries = savehorse_sift::extract_strings(&path, min_len, ascii_only, unicode_only)?;
 
     if inv.has("json") {
         println!("{}", encode(&entries)?);
@@ -266,7 +266,7 @@ fn sift_search(inv: &Invocation) -> Result<ExitCode> {
     let ignore_case = inv.has("ignore-case");
     let glob = inv.value("glob");
 
-    let hits = shavehorse_sift::search_paths(pattern, &paths, is_regex, ignore_case, glob)?;
+    let hits = savehorse_sift::search_paths(pattern, &paths, is_regex, ignore_case, glob)?;
 
     if inv.has("json") {
         println!("{}", encode(&hits)?);
@@ -288,7 +288,7 @@ fn sift_replace(inv: &Invocation) -> Result<ExitCode> {
     let backup = inv.has("backup");
     let glob = inv.value("glob");
 
-    let outcome = shavehorse_sift::replace_paths(
+    let outcome = savehorse_sift::replace_paths(
         pattern,
         replacement,
         &paths,
@@ -324,7 +324,7 @@ fn sift_xor(inv: &Invocation) -> Result<ExitCode> {
     let path = PathBuf::from(inv.position(1, "path")?);
     let max_key = inv.number("max-key")?.unwrap_or(255).min(255) as u8;
 
-    let hits = shavehorse_sift::xor_search(pattern, &path, max_key)?;
+    let hits = savehorse_sift::xor_search(pattern, &path, max_key)?;
 
     if inv.has("json") {
         println!("{}", encode(&hits)?);
@@ -344,11 +344,11 @@ fn sift_xor(inv: &Invocation) -> Result<ExitCode> {
 fn scout_catalog(inv: &Invocation) -> Result<ExitCode> {
     let root = PathBuf::from(inv.position(0, "path")?);
     let format = match inv.value("format") {
-        Some(f) => shavehorse_scout::ExportFormat::parse(f)?,
-        None => shavehorse_scout::ExportFormat::Table,
+        Some(f) => savehorse_scout::ExportFormat::parse(f)?,
+        None => savehorse_scout::ExportFormat::Table,
     };
 
-    let opts = shavehorse_core::WalkOptions {
+    let opts = savehorse_core::WalkOptions {
         max_depth: inv.number("depth")?,
         min_size: inv.size("min-size")?,
         max_size: inv.size("max-size")?,
@@ -356,8 +356,8 @@ fn scout_catalog(inv: &Invocation) -> Result<ExitCode> {
         include_hidden: false,
     };
 
-    let entries = shavehorse_scout::build_catalog(&root, &opts)?;
-    let rendered = shavehorse_scout::render_catalog(&entries, format)?;
+    let entries = savehorse_scout::build_catalog(&root, &opts)?;
+    let rendered = savehorse_scout::render_catalog(&entries, format)?;
 
     match inv.value("out") {
         Some(dest) => {
@@ -388,7 +388,7 @@ fn scout_duplicates(inv: &Invocation) -> Result<ExitCode> {
     let ext = inv.value("ext");
     let depth = inv.number("depth")?;
 
-    let summary = shavehorse_scout::find_duplicates(&root, min_size, ext, depth)?;
+    let summary = savehorse_scout::find_duplicates(&root, min_size, ext, depth)?;
 
     if inv.has("json") {
         println!("{}", encode(&summary)?);
@@ -412,7 +412,7 @@ fn scout_duplicates(inv: &Invocation) -> Result<ExitCode> {
             for dup in &cluster.duplicates {
                 println!("  duplicate {}", dup);
             }
-            println!("  wasted    {}", shavehorse_core::format_bytes(cluster.wasted_bytes));
+            println!("  wasted    {}", savehorse_core::format_bytes(cluster.wasted_bytes));
             println!();
         }
     }
@@ -425,8 +425,8 @@ fn scout_clean(inv: &Invocation) -> Result<ExitCode> {
     let min_size = inv.size("min-size")?.unwrap_or(1);
     let ext = inv.value("ext");
 
-    let summary = shavehorse_scout::find_duplicates(&root, min_size, ext, None)?;
-    let outcome = shavehorse_scout::delete_duplicates(&summary, commit);
+    let summary = savehorse_scout::find_duplicates(&root, min_size, ext, None)?;
+    let outcome = savehorse_scout::delete_duplicates(&summary, commit);
 
     if inv.has("json") {
         println!("{}", encode(&outcome)?);

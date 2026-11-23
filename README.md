@@ -6,9 +6,9 @@ savehorse is a single Rust workspace that replaces a portfolio of twenty-two
 small Windows utilities with thirteen modules behind one command line — and,
 next, one desktop application. Each module keeps the name it had on its own.
 
-A shave horse is the bench a chairmaker sits on: it clamps the work with a foot
-pedal so both hands stay free for the tool. That is the shape of this project.
-The bench is shared; the tools are not.
+The name comes from the shave horse: the bench a chairmaker sits on, which
+clamps the work with a foot pedal so both hands stay free for the tool. One
+bench, thirteen tools, each keeping the name it had on its own.
 
 ## Status
 
@@ -107,11 +107,11 @@ take a value.
 ## Layout
 
 ```
-crates/shavehorse-core        errors, sizes, hashing, walking, path safety
-crates/shavehorse-registry    the operation manifest — declared once, read by all
-crates/shavehorse-sift        text and search
-crates/shavehorse-scout       filesystem catalogue and deduplication
-apps/shavehorse-cli           the `savehorse` binary
+crates/savehorse-core        errors, sizes, hashing, walking, path safety
+crates/savehorse-registry    the operation manifest — declared once, read by all
+crates/savehorse-sift        text and search
+crates/savehorse-scout       filesystem catalogue and deduplication
+apps/savehorse-cli           the `savehorse` binary
 ```
 
 Each module crate holds logic only. It returns data or an error and never
