@@ -222,10 +222,12 @@ jobs:
           cargo run --quiet -- pulse services
 
           # a planned operation must refuse, and say why.
-          # pulse.priority still needs a privileged platform call, so it is the
-          # one that refuses. (aegis shred and pulse.services held this role
-          # before they were ported.)
-          if cargo run --quiet -- pulse priority 2>err.txt; then
+          # Ask the manifest which operation is still planned, rather than
+          # naming one here. This check went stale three times as operations
+          # were ported.
+          planned="$(cargo run --quiet -- ops | awk '$2 == "planned" { print $1; exit }')"
+          echo "checking that ${planned} refuses"
+          if cargo run --quiet -- "${planned%%.*}" "${planned#*.}" 2>err.txt; then
             echo "planned operation should have failed"
             exit 1
           fi

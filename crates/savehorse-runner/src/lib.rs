@@ -1941,10 +1941,15 @@ mod tests {
 
     #[test]
     fn planned_operations_refuse_to_run() {
-        // pulse.services is declared but still needs a platform API, so it is
-        // the operation that refuses. (aegis.shred used to hold this role
-        // until it was ported.)
-        let req = Request::new("pulse", "services");
+        // Find whatever is still planned, rather than naming one. This test
+        // has gone stale three times because it hardcoded an operation that
+        // was subsequently ported.
+        let planned = registry::OPS
+            .iter()
+            .find(|o| o.status == registry::Status::Planned)
+            .expect("the manifest should still contain at least one planned operation");
+
+        let req = Request::new(planned.module, planned.name);
         let err = execute(&req).unwrap_err().to_string();
         assert!(err.contains("not ported yet"), "got: {}", err);
     }
