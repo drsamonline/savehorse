@@ -34,14 +34,21 @@ retires the old container format.
 From `forge` (gen 1). No gen 2 equivalent; this module is the only home for
 these operations.
 
+**Porting note.** `patch` can preview, refuses an offset that would run past
+the end of the file, and only then writes. `inspect` no longer reads a fixed
+72 bytes when the optional header claims to be empty, which could quietly read
+into the section table. `imports` is a heuristic — it scans for printable
+strings ending in `.dll` — and is described that way rather than as a real
+import-table walk.
+
 | Operation | What it does | Status |
 |---|---|---|
-| `forge.inspect` | DOS, COFF and optional PE headers | planned |
-| `forge.sections` | Section headers with Shannon entropy | planned |
-| `forge.imports` | Imported dynamic libraries | planned |
-| `forge.hexdump` | Hex and ASCII view | planned |
-| `forge.search` | Find a hex pattern | planned |
-| `forge.patch` | Overwrite bytes at an offset | planned |
+| `forge.inspect` | DOS, COFF and optional PE headers | **ready** |
+| `forge.sections` | Section headers with Shannon entropy | **ready** |
+| `forge.imports` | Imported dynamic libraries | **ready** |
+| `forge.hexdump` | Hex and ASCII view | **ready** |
+| `forge.search` | Find a hex pattern | **ready** |
+| `forge.patch` | Overwrite bytes at an offset | **ready** |
 
 ## halo — Disc Studio
 
@@ -188,10 +195,17 @@ what keeps a scan of a large tree affordable.
 From `morph` (gen 2) and `strata`'s rename (gen 1). `morph` has the undo
 journal, so it wins.
 
+**Porting note.** The original wrote the undo journal *after* renaming and
+ignored the result. A crash halfway through left files renamed with no record
+of how to put them back, and a journal that failed to write went unnoticed.
+The journal is now written before anything moves, and failing to write it
+stops the whole run. A real rename always leaves a journal, defaulting to
+`.savehorse-rename-<time>.json` if none is named.
+
 | Operation | What it does | Status |
 |---|---|---|
-| `morph.rename` | Pattern rename with collision safety | planned |
-| `morph.undo` | Roll back the last transaction | planned |
+| `morph.rename` | Pattern rename with collision safety | **ready** |
+| `morph.undo` | Roll back the last transaction | **ready** |
 
 ## pulse — System
 
@@ -271,8 +285,8 @@ what it is.
 | Original applications | 22 |
 | Modules | 13 |
 | Operations declared | 88 |
-| Operations ready | 42 |
-| Operations planned | 46 |
+| Operations ready | 50 |
+| Operations planned | 38 |
 
 The manifest in `crates/savehorse-registry/src/lib.rs` is the source of truth;
 a unit test asserts the count so this table cannot drift from the code.

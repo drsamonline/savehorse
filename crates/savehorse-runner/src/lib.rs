@@ -184,6 +184,14 @@ pub fn execute(req: &Request) -> Result<Outcome> {
         "sift.clean" => sift_clean(req),
         "sift.stats" => sift_stats(req),
         "sift.convert" => sift_convert(req),
+        "forge.inspect" => forge_inspect(req),
+        "forge.sections" => forge_sections(req),
+        "forge.imports" => forge_imports(req),
+        "forge.hexdump" => forge_hexdump(req),
+        "forge.search" => forge_search(req),
+        "forge.patch" => forge_patch(req),
+        "morph.rename" => morph_rename(req),
+        "morph.undo" => morph_undo(req),
         other => Err(Error::Invalid(format!(
             "{} is marked implemented but has no runner",
             other
@@ -1076,6 +1084,209 @@ fn sift_convert(req: &Request) -> Result<Outcome> {
         ),
         to_json(&r)?,
     ))
+}
+
+
+// ---------------------------------------------------------------------------
+// forge
+// ---------------------------------------------------------------------------
+
+fn forge_inspect(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let i = savehorse_forge::inspect_pe(&path)?;
+
+    let text = format!(
+        "file       {}\nmachine    {}\n64-bit     {}\nsections   {}\nentry rva  0x{:X}\nimage base 0x{:X}\nsubsystem  {} ({})\nbytes      {}\n",
+        i.file_path, i.machine_type, i.is_64bit, i.number_of_sections,
+        i.entry_point_rva, i.image_base, i.subsystem_name, i.subsystem_id, i.file_size_bytes
+    );
+    Ok(Outcome::new(text, to_json(&i)?))
+}
+
+fn forge_sections(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let sections = savehorse_forge::inspect_sections(&path)?;
+
+    let mut text = format!(
+        "{:<10} {:<10} {:<10} {:<12} {:<9} {}\n{}\n",
+        "NAME", "VIRT ADDR", "VIRT SIZE", "RAW SIZE", "ENTROPY", "FLAGS", "-".repeat(64)
+    );
+    for s in &sections {
+        text.push_str(&format!(
+            "{:<10} 0x{:<8X} {:<10} {:<12} {:<9.4} {}{}\n",
+            s.name, s.virtual_address, s.virtual_size, s.raw_data_size, s.entropy,
+            s.characteristics, if s.is_packed { "  PACKED?" } else { "" }
+        ));
+    }
+    text.push_str(&format!("\n{} section(s)\n", sections.len()));
+
+    Ok(Outcome::new(text, to_json(&sections)?))
+}
+
+fn forge_imports(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let dlls = savehorse_forge::extract_imports(&path)?;
+
+    let mut text = format!("{} library name(s) found by scanning for .dll strings\n", dlls.len());
+    for d in &dlls {
+        text.push_str(&format!("  {}\n", d));
+    }
+
+    Ok(Outcome::new(text, to_json(&dlls)?))
+}
+
+fn forge_hexdump(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let offset = req.number("offset")?.unwrap_or(0) as u64;
+    let length = req.number("length")?.unwrap_or(256);
+
+    let lines = savehorse_forge::hexdump_file(&path, offset, length)?;
+
+    let mut text = String::new();
+    for line in &lines {
+        text.push_str(&format!("{:08X}  {}  |{}|\n", line.offset, line.hex_bytes, line.ascii));
+    }
+    text.push_str(&format!("{} line(s)\n", lines.len()));
+
+    Ok(Outcome::new(text, to_json(&lines)?))
+}
+
+fn forge_search(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let hex = required_value(req, "hex")?;
+    let hits = savehorse_forge::search_hex_pattern(&path, hex)?;
+
+    let mut text = format!("{} match(es)\n", hits.len());
+    for hit in &hits {
+        text.push_str(&format!("  0x{:08X}\n", hit));
+    }
+
+    Ok(Outcome::new(text, to_json(&hits)?))
+}
+
+fn forge_patch(req: &Request) -> Result<Outcome> {
+    let path = PathBuf::from(req.position(0, "path")?);
+    let offset = req.number("offset")?.unwrap_or(0) as u64;
+    let hex = required_value(req, "hex")?;
+    let write = !req.has("dry-run");
+
+    let r = savehorse_forge::apply_patch(&path, offset, hex, req.has("backup"), write)?;
+
+    let text = if r.written {
+        format!(
+            "patched {} byte(s) at 0x{:X} in '{}': {} -> {}{}\n",
+            r.bytes_patched, r.offset, r.file, r.original_bytes, r.new_bytes,
+            r.backup_created.map(|b| format!(" (backup {})", b)).unwrap_or_default()
+        )
+    } else {
+        format!(
+            "would patch {} byte(s) at 0x{:X} in '{}': {} -> {} — add --dry-run off to apply\n",
+            r.bytes_patched, r.offset, r.file, r.original_bytes, r.new_bytes
+        )
+    };
+
+    let mut outcome = Outcome::new(text, to_json(&r)?);
+    if !r.written {
+        outcome = outcome.preview();
+    }
+    Ok(outcome)
+}
+
+// ---------------------------------------------------------------------------
+// morph
+// ---------------------------------------------------------------------------
+
+fn morph_rename(req: &Request) -> Result<Outcome> {
+    let paths: Vec<PathBuf> = req.positional.iter().map(PathBuf::from).collect();
+    if paths.is_empty() {
+        return Err(Error::Invalid("at least one path is required".to_string()));
+    }
+
+    let mut options = savehorse_morph::options_with_defaults();
+    options.pattern = req.value("pattern").map(|s| s.to_string());
+    options.replace = req.value("replace").unwrap_or("").to_string();
+    options.prefix = req.value("prefix").map(|s| s.to_string());
+    options.suffix = req.value("suffix").map(|s| s.to_string());
+    options.case = match req.value("case") {
+        Some(c) if !c.trim().is_empty() => Some(savehorse_morph::CaseMode::parse(c)?),
+        _ => None,
+    };
+    options.extension = req.value("ext").map(|s| s.to_string());
+    options.lowercase_extension = req.has("ext-lower");
+    options.number = req.has("number");
+    if let Some(start) = req.number("start")? {
+        options.start = start;
+    }
+    if let Some(step) = req.number("step")? {
+        options.step = step;
+    }
+    if let Some(pad) = req.number("pad")? {
+        options.pad = pad;
+    }
+
+    let dry_run = req.has("dry-run");
+
+    // A rename you cannot undo is worse than one you did not do, so a real run
+    // always leaves a journal — a default one if none was named.
+    let journal: Option<PathBuf> = match req.value("journal") {
+        Some(j) if !j.trim().is_empty() => Some(PathBuf::from(j)),
+        _ if dry_run => None,
+        _ => {
+            let stamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            Some(PathBuf::from(format!(".savehorse-rename-{}.json", stamp)))
+        }
+    };
+
+    let report = savehorse_morph::rename(&paths, &options, dry_run, journal.as_deref())?;
+
+    let mut text = if report.dry_run {
+        format!("preview: {} file(s) considered, {} would change\n", report.considered, report.changed)
+    } else {
+        format!(
+            "renamed {} of {} file(s)\n",
+            report.changed, report.considered
+        )
+    };
+    for item in report.items.iter().filter(|i| i.changed) {
+        text.push_str(&format!("  {} -> {}\n", item.original_name, item.new_name));
+    }
+    if let Some(ref j) = report.journal_path {
+        text.push_str(&format!("undo journal: {}\n", j));
+    }
+    if report.dry_run {
+        text.push_str("nothing renamed — re-run without --dry-run to apply\n");
+    }
+
+    let mut outcome = Outcome::new(text, to_json(&report)?);
+    if report.dry_run {
+        outcome = outcome.preview();
+    }
+    Ok(outcome)
+}
+
+fn morph_undo(req: &Request) -> Result<Outcome> {
+    let journal = PathBuf::from(req.position(0, "journal")?);
+    let dry_run = req.has("dry-run");
+
+    let report = savehorse_morph::undo(&journal, dry_run)?;
+
+    let mut text = if report.dry_run {
+        format!("preview: {} rename(s) would be reversed\n", report.changed)
+    } else {
+        format!("reversed {} rename(s)\n", report.changed)
+    };
+    for item in &report.items {
+        text.push_str(&format!("  {} -> {}\n", item.original_name, item.new_name));
+    }
+
+    let mut outcome = Outcome::new(text, to_json(&report)?);
+    if report.dry_run {
+        outcome = outcome.preview();
+    }
+    Ok(outcome)
 }
 
 // ---------------------------------------------------------------------------

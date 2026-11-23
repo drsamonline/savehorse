@@ -140,6 +140,26 @@ jobs:
           cargo run --quiet -- sift convert smoke/messy.txt --to utf8-bom --out smoke/messy-bom.txt
           test -s smoke/messy-bom.txt
 
+          # forge
+          cargo run --quiet -- forge hexdump smoke/px.png --length 32
+          cargo run --quiet -- forge search smoke/px.png --hex "89504E47"
+          cargo run --quiet -- forge patch smoke/px.png --offset 0 --hex "89504E47" --dry-run
+          if cargo run --quiet -- forge inspect smoke/px.png 2>err2.txt; then
+            echo "a PNG must not pass as a PE"
+            exit 1
+          fi
+
+          # morph
+          mkdir -p smoke/ren
+          printf 'x' > smoke/ren/one.txt
+          printf 'y' > smoke/ren/two.txt
+          cargo run --quiet -- morph rename smoke/ren --case upper --dry-run
+          test -f smoke/ren/one.txt
+          cargo run --quiet -- morph rename smoke/ren --case upper --journal smoke/ren/journal.json
+          test -f smoke/ren/ONE.TXT
+          cargo run --quiet -- morph undo smoke/ren/journal.json
+          test -f smoke/ren/one.txt
+
           # a planned operation must refuse, and say why
           if cargo run --quiet -- aegis shred smoke/text.txt 2>err.txt; then
             echo "planned operation should have failed"

@@ -392,6 +392,150 @@ const P_TAB: Param = Param {
     options: &[],
 };
 
+const P_OFFSET: Param = Param {
+    name: "offset",
+    kind: ParamKind::Number,
+    positional: false,
+    required: true,
+    help: "Byte offset in the file",
+    options: &[],
+};
+
+const P_OFFSET_OPT: Param = Param {
+    name: "offset",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Byte offset to start at (default 0)",
+    options: &[],
+};
+
+const P_LENGTH: Param = Param {
+    name: "length",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "How many bytes to read (default 256)",
+    options: &[],
+};
+
+const P_HEX: Param = Param {
+    name: "hex",
+    kind: ParamKind::Text,
+    positional: false,
+    required: true,
+    help: "Bytes as hex, e.g. \"4D 5A\" or 4d5a",
+    options: &[],
+};
+
+const P_BACKUP: Param = Param {
+    name: "backup",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Keep a .bak copy before writing",
+    options: &[],
+};
+
+const P_PATTERN_OPT: Param = Param {
+    name: "pattern",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Regular expression applied to the file name stem",
+    options: &[],
+};
+
+const P_REPLACE: Param = Param {
+    name: "replace",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Replacement for what the pattern matches",
+    options: &[],
+};
+
+const P_PREFIX: Param = Param {
+    name: "prefix",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Text to put before each name",
+    options: &[],
+};
+
+const P_SUFFIX: Param = Param {
+    name: "suffix",
+    kind: ParamKind::Text,
+    positional: false,
+    required: false,
+    help: "Text to put after each name",
+    options: &[],
+};
+
+const P_CASE: Param = Param {
+    name: "case",
+    kind: ParamKind::Choice,
+    positional: false,
+    required: false,
+    help: "Case transformation for the name",
+    options: &["lower", "upper", "title", "snake"],
+};
+
+const P_EXT_LOWER: Param = Param {
+    name: "ext-lower",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Lowercase the extension",
+    options: &[],
+};
+
+const P_NUMBER: Param = Param {
+    name: "number",
+    kind: ParamKind::Bool,
+    positional: false,
+    required: false,
+    help: "Append a sequential number",
+    options: &[],
+};
+
+const P_STEP: Param = Param {
+    name: "step",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Increment between numbers (default 1)",
+    options: &[],
+};
+
+const P_PAD: Param = Param {
+    name: "pad",
+    kind: ParamKind::Number,
+    positional: false,
+    required: false,
+    help: "Zero-pad numbers to this width (default 3)",
+    options: &[],
+};
+
+const P_JOURNAL: Param = Param {
+    name: "journal",
+    kind: ParamKind::Path,
+    positional: false,
+    required: false,
+    help: "Where to write the undo journal (default: ./.savehorse-rename-<time>.json)",
+    options: &[],
+};
+
+const P_JOURNAL_REQ: Param = Param {
+    name: "journal",
+    kind: ParamKind::Path,
+    positional: true,
+    required: true,
+    help: "Undo journal written by a previous rename",
+    options: &[],
+};
+
 const P_COLLAPSE: Param = Param {
     name: "collapse-blank",
     kind: ParamKind::Bool,
@@ -578,6 +722,7 @@ const HALO_CONVERT: &[Param] = &[P_SOURCE, P_OUT];
 const P_PATH_ONE: &[Param] = &[P_PATH];
 const HALO_IMAGE_ONE: &[Param] = &[P_IMAGE];
 const ARC_ONE: &[Param] = &[P_ARCHIVE];
+const P_JOURNAL_REQ_ONE: &[Param] = &[P_JOURNAL_REQ];
 
 
 // ---------------------------------------------------------------------------
@@ -619,6 +764,24 @@ const SIFT_EOL: &[Param] = &[P_PATH, P_EOL_TO, P_IN_PLACE];
 const SIFT_CLEAN_OP: &[Param] = &[P_PATH, P_STRIP, P_TAB, P_COLLAPSE, P_IN_PLACE];
 const SIFT_CONVERT: &[Param] = &[P_PATH, P_ENC_TO, P_OUT];
 
+
+// ---------------------------------------------------------------------------
+// forge — Binary Lab
+// ---------------------------------------------------------------------------
+
+const FORGE_HEXDUMP: &[Param] = &[P_PATH, P_OFFSET_OPT, P_LENGTH];
+const FORGE_SEARCH: &[Param] = &[P_PATH, P_HEX];
+const FORGE_PATCH: &[Param] = &[P_PATH, P_OFFSET, P_HEX, P_BACKUP];
+
+// ---------------------------------------------------------------------------
+// morph — Rename Engine
+// ---------------------------------------------------------------------------
+
+const MORPH_RENAME: &[Param] = &[
+    P_PATHS, P_PATTERN_OPT, P_REPLACE, P_PREFIX, P_SUFFIX, P_CASE, P_EXT,
+    P_EXT_LOWER, P_NUMBER, P_START, P_STEP, P_PAD, P_JOURNAL,
+];
+
 // ---------------------------------------------------------------------------
 // The manifest
 // ---------------------------------------------------------------------------
@@ -651,12 +814,12 @@ pub static OPS: &[Op] = &[
     Op { id: "aegis.harden",     module: "aegis", name: "harden",     summary: "Audit an executable for DEP, ASLR and signing",            danger: Danger::Safe,         status: Status::Planned, params: &[] },
 
     // -- forge -------------------------------------------------------------
-    Op { id: "forge.inspect",  module: "forge", name: "inspect",  summary: "Read DOS, COFF and optional PE headers",          danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "forge.sections", module: "forge", name: "sections", summary: "List section headers with Shannon entropy",        danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "forge.imports",  module: "forge", name: "imports",  summary: "List imported dynamic libraries",                  danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "forge.hexdump",  module: "forge", name: "hexdump",  summary: "Show bytes as hex and ASCII",                      danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "forge.search",   module: "forge", name: "search",   summary: "Find a hex pattern in a binary",                   danger: Danger::Safe,         status: Status::Planned, params: &[] },
-    Op { id: "forge.patch",    module: "forge", name: "patch",    summary: "Overwrite bytes at an offset",                     danger: Danger::Irreversible, status: Status::Planned, params: &[] },
+    Op { id: "forge.inspect", module: "forge", name: "inspect", summary: "Read DOS, COFF and optional PE headers", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "forge.sections", module: "forge", name: "sections", summary: "List section headers with Shannon entropy", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "forge.imports", module: "forge", name: "imports", summary: "List imported dynamic libraries", danger: Danger::Safe, status: Status::Implemented, params: P_PATH_ONE },
+    Op { id: "forge.hexdump", module: "forge", name: "hexdump", summary: "Show bytes as hex and ASCII", danger: Danger::Safe, status: Status::Implemented, params: FORGE_HEXDUMP },
+    Op { id: "forge.search", module: "forge", name: "search", summary: "Find a hex pattern in a binary", danger: Danger::Safe, status: Status::Implemented, params: FORGE_SEARCH },
+    Op { id: "forge.patch", module: "forge", name: "patch", summary: "Overwrite bytes at an offset", danger: Danger::Irreversible, status: Status::Implemented, params: FORGE_PATCH },
 
     // -- halo --------------------------------------------------------------
     Op { id: "halo.create", module: "halo", name: "create", summary: "Build an ISO 9660 image from a directory", danger: Danger::Safe, status: Status::Implemented, params: HALO_CREATE },
@@ -718,8 +881,8 @@ pub static OPS: &[Op] = &[
     Op { id: "scout.diff",       module: "scout", name: "diff",       summary: "Compare two files byte by byte",                         danger: Danger::Safe,         status: Status::Planned,     params: &[] },
 
     // -- morph -------------------------------------------------------------
-    Op { id: "morph.rename", module: "morph", name: "rename", summary: "Rename by pattern with collision safety",  danger: Danger::Destructive,  status: Status::Planned, params: &[] },
-    Op { id: "morph.undo",   module: "morph", name: "undo",   summary: "Roll back the last rename transaction",     danger: Danger::Destructive,  status: Status::Planned, params: &[] },
+    Op { id: "morph.rename", module: "morph", name: "rename", summary: "Rename by pattern with collision safety", danger: Danger::Destructive, status: Status::Implemented, params: MORPH_RENAME },
+    Op { id: "morph.undo", module: "morph", name: "undo", summary: "Roll back the last rename transaction", danger: Danger::Destructive, status: Status::Implemented, params: P_JOURNAL_REQ_ONE },
 
     // -- pulse -------------------------------------------------------------
     Op { id: "pulse.hardware", module: "pulse", name: "hardware", summary: "CPU, memory and architecture",         danger: Danger::Safe, status: Status::Planned, params: &[] },
@@ -799,7 +962,7 @@ mod tests {
     fn manifest_declares_eighty_eight_operations() {
         let (total, implemented) = counts();
         assert_eq!(total, 88, "the plan promises 88 operations");
-        assert_eq!(implemented, 42, "sift 9, scout 3, glyph 6, halo 5, iris 6, arc 6, revive 7");
+        assert_eq!(implemented, 50, "sift 9, scout 3, glyph 6, halo 5, iris 6, arc 6, revive 7, forge 6, morph 2");
     }
 
     #[test]

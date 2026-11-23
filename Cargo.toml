@@ -11,6 +11,8 @@ members = [
     "crates/savehorse-iris",
     "crates/savehorse-arc",
     "crates/savehorse-revive",
+    "crates/savehorse-forge",
+    "crates/savehorse-morph",
     "apps/savehorse-cli",
 ]
 
@@ -33,6 +35,8 @@ savehorse-halo = { path = "crates/savehorse-halo" }
 savehorse-iris = { path = "crates/savehorse-iris" }
 savehorse-arc = { path = "crates/savehorse-arc" }
 savehorse-revive = { path = "crates/savehorse-revive" }
+savehorse-forge = { path = "crates/savehorse-forge" }
+savehorse-morph = { path = "crates/savehorse-morph" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
