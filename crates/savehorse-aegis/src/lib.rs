@@ -850,9 +850,10 @@ mod tests {
         assert_eq!(found.len(), 2);
 
         let desktop = found.iter().find(|e| e.name == "app.desktop").unwrap();
+        let expected = savehorse_core::display_path(&real_target);
         assert_eq!(
             desktop.target.as_deref(),
-            Some(real_target.to_string_lossy().as_ref()),
+            Some(expected.as_str()),
             "arguments are stripped, leaving the program"
         );
         assert!(desktop.target_exists, "the target file is on disk");
