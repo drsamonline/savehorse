@@ -678,6 +678,36 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
+
+    #[test]
+    fn every_truncation_of_a_pe_is_answered_not_fatal() {
+        // These parsers read files the user did not write. A truncated or
+        // corrupt executable must produce an error, never a panic: a panic in
+        // a library takes the whole application down with it.
+        let dir = scratch("trunc-pe");
+        let file = dir.join("t.exe");
+        let full = minimal_pe();
+
+        for len in 0..full.len() {
+            fs::write(&file, &full[..len]).unwrap();
+            let _ = inspect_pe(&file);
+            let _ = inspect_sections(&file);
+            let _ = extract_imports(&file);
+            let _ = security_flags(&file);
+        }
+
+        // And bytes that are not a file format at all.
+        for seed in 0u8..64 {
+            let junk: Vec<u8> = (0..256).map(|i| (i as u8).wrapping_mul(seed).wrapping_add(seed)).collect();
+            fs::write(&file, &junk).unwrap();
+            let _ = inspect_pe(&file);
+            let _ = inspect_sections(&file);
+            let _ = extract_imports(&file);
+        }
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn rejects_a_file_that_is_not_pe() {
         let dir = scratch("notpe");

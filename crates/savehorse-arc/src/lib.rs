@@ -418,7 +418,9 @@ pub fn split_file(file_path: &Path, chunk_size: u64, out_dir: &Path) -> Result<S
     };
 
     let manifest_path = out_dir.join(format!("{}.manifest.json", filename));
-    fs::write(&manifest_path, serde_json::to_string_pretty(&manifest).unwrap())?;
+    let text = serde_json::to_string_pretty(&manifest)
+        .map_err(|e| Error::Invalid(format!("could not serialise the split manifest: {}", e)))?;
+    fs::write(&manifest_path, text)?;
 
     Ok(manifest)
 }
@@ -475,7 +477,9 @@ pub fn join_chunks(input: &Path, output: Option<&Path>) -> Result<JoinReport> {
         return Err(Error::Invalid("no chunks found to join".to_string()));
     }
 
-    let dest = destination.unwrap();
+    let dest = destination.ok_or_else(|| {
+        Error::Invalid("could not work out where to write the joined file".to_string())
+    })?;
     if let Some(parent) = dest.parent() {
         if !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)?;
@@ -1049,6 +1053,36 @@ mod tests {
         assert_eq!(meta.total_bytes, 1024);
         assert_eq!(meta.files.len(), 1);
         assert_eq!(meta.announce.as_deref(), Some("http://tracker/ann"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+
+    #[test]
+    fn every_truncation_of_a_torrent_is_answered_not_fatal() {
+        // A .torrent arrives from a stranger. Every prefix of a valid one must
+        // be answered with an error rather than a panic.
+        let dir = scratch("trunc-torrent");
+        let file = dir.join("t.torrent");
+
+        let mut body = Vec::new();
+        body.extend_from_slice(b"d8:announce18:http://tracker/ann4:infod6:lengthi1024e4:name8:file.bin12:piece lengthi16384e6:pieces20:");
+        body.extend_from_slice(&[0u8; 20]);
+        body.extend_from_slice(b"ee");
+
+        for len in 0..body.len() {
+            fs::write(&file, &body[..len]).unwrap();
+            let _ = parse_torrent(&file);
+        }
+
+        // And a few byte patterns that are not bencode at all.
+        for seed in 0u8..32 {
+            let junk: Vec<u8> = (0..128)
+                .map(|i| (i as u8).wrapping_mul(seed).wrapping_add(7))
+                .collect();
+            fs::write(&file, &junk).unwrap();
+            let _ = parse_torrent(&file);
+        }
+
         let _ = fs::remove_dir_all(&dir);
     }
 
