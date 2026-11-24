@@ -357,7 +357,7 @@ pub fn create_image(source_dir: &Path, out_path: &Path, volume_id: &str) -> Resu
     let bytes_written = fs::metadata(out_path)?.len();
 
     Ok(CreateReport {
-        image_path: out_savehorse_core::display_path(&path),
+        image_path: savehorse_core::display_path(&out_path),
         volume_id: volume_id.to_string(),
         files_count: planned.len(),
         total_sectors,
@@ -524,7 +524,7 @@ pub fn extract_image(image_path: &Path, out_dir: &Path, filter: Option<&str>) ->
     }
 
     Ok(ExtractReport {
-        image_path: image_savehorse_core::display_path(&path),
+        image_path: savehorse_core::display_path(&image_path),
         output_dir: savehorse_core::display_path(&out_dir),
         extracted,
     })
@@ -676,7 +676,7 @@ pub fn write_cue_sheet(image: &Path, cue_path: &Path, track_mode: &str) -> Resul
 
     Ok(CueReport {
         image: image.to_string_lossy().to_string(),
-        cue_path: cue_savehorse_core::display_path(&path),
+        cue_path: savehorse_core::display_path(&cue_path),
         track_mode: mode.to_string(),
         content,
     })
@@ -745,7 +745,7 @@ pub fn write_cover_art(image: &Path, out_path: &Path) -> Result<CoverReport> {
 
     Ok(CoverReport {
         image: image.to_string_lossy().to_string(),
-        svg_path: out_savehorse_core::display_path(&path),
+        svg_path: savehorse_core::display_path(&out_path),
         volume_id: info.volume_id,
         files_listed: listed,
         bytes: svg.len(),

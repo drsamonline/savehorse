@@ -178,7 +178,7 @@ pub fn convert_image(source: &Path, out_path: &Path) -> Result<ConvertResult> {
 
     Ok(ConvertResult {
         source_file: savehorse_core::display_path(&source),
-        output_file: out_savehorse_core::display_path(&path),
+        output_file: savehorse_core::display_path(&out_path),
         format: extension_upper(out_path, "png"),
         width: w,
         height: h,
@@ -205,7 +205,7 @@ pub fn thumb_image(source: &Path, out_path: &Path, width: u32, height: u32) -> R
 
     Ok(ThumbResult {
         source_file: savehorse_core::display_path(&source),
-        output_file: out_savehorse_core::display_path(&path),
+        output_file: savehorse_core::display_path(&out_path),
         original_dimensions: format!("{}x{}", orig_w, orig_h),
         thumbnail_dimensions: format!("{}x{}", new_w, new_h),
         output_byte_size: size,
@@ -247,7 +247,7 @@ pub fn transform_image(
 
     Ok(TransformResult {
         source_file: savehorse_core::display_path(&source),
-        output_file: out_savehorse_core::display_path(&path),
+        output_file: savehorse_core::display_path(&out_path),
         rotation: rotate,
         flip_horizontal: flip_h,
         flip_vertical: flip_v,
@@ -359,7 +359,7 @@ pub fn batch_process(
     }
 
     Ok(BatchResult {
-        source_dir: in_savehorse_core::display_path(&dir),
+        source_dir: savehorse_core::display_path(&in_dir),
         output_dir: savehorse_core::display_path(&out_dir),
         target_format: target,
         thumbnail_size: thumb_size,
@@ -471,7 +471,7 @@ pub fn write_ico(source: &Path, out_path: &Path, sizes: &[u32]) -> Result<IcoRep
 
     Ok(IcoReport {
         source_file: savehorse_core::display_path(&source),
-        output_file: out_savehorse_core::display_path(&path),
+        output_file: savehorse_core::display_path(&out_path),
         sizes: wanted,
         output_byte_size: ico.len() as u64,
     })
@@ -556,8 +556,8 @@ pub fn contact_sheet_svg(source_dir: &Path, out_path: &Path, cell: u32, columns:
     fs::write(out_path, &svg)?;
 
     Ok(SheetReport {
-        source_dir: source_savehorse_core::display_path(&dir),
-        output_file: out_savehorse_core::display_path(&path),
+        source_dir: savehorse_core::display_path(&source_dir),
+        output_file: savehorse_core::display_path(&out_path),
         images: placed,
         columns,
         output_byte_size: svg.len() as u64,

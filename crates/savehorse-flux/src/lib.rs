@@ -263,7 +263,7 @@ pub fn synthesize(
     fs::write(out_path, &out)?;
 
     Ok(SynthReport {
-        output_file: out_savehorse_core::display_path(&path),
+        output_file: savehorse_core::display_path(&out_path),
         frequency_hz,
         duration_seconds: duration_secs,
         sample_rate,

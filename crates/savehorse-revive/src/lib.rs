@@ -625,7 +625,7 @@ pub fn unpack_archive(archive_path: &Path, dest_dir: &Path) -> Result<UnpackRepo
 
     Ok(UnpackReport {
         archive_path: savehorse_core::display_path(&archive_path),
-        destination_directory: dest_savehorse_core::display_path(&dir),
+        destination_directory: savehorse_core::display_path(&dest_dir),
         files_extracted: extracted,
         total_bytes_extracted: total,
     })

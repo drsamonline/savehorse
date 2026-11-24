@@ -144,7 +144,7 @@ pub fn create_pdf(title: &str, lines: &[String], out_path: &Path) -> Result<PdfR
     fs::write(out_path, &pdf)?;
 
     Ok(PdfReport {
-        file_path: out_savehorse_core::display_path(&path),
+        file_path: savehorse_core::display_path(&out_path),
         bytes_written: pdf.len() as u64,
         title: title.to_string(),
         lines: lines.len(),
