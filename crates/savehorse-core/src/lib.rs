@@ -316,6 +316,44 @@ pub fn is_within(root: &Path, candidate: &Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn display_path_never_shows_a_backslash() {
+        let joined = Path::new("smoke").join("nested").join("a.txt");
+        let shown = display_path(&joined);
+        assert!(
+            !shown.contains('\\'),
+            "separators are forward slashes everywhere: {}",
+            shown
+        );
+        assert!(shown.ends_with("a.txt"), "got: {}", shown);
+        if cfg!(windows) {
+            assert_eq!(shown, "smoke/nested/a.txt");
+        }
+    }
+
+    #[test]
+    fn display_path_takes_borrowed_or_owned() {
+        let owned = PathBuf::from("smoke/a.txt");
+        let expected = display_path(&owned);
+        assert_eq!(display_path(Path::new("smoke/a.txt")), expected);
+        assert_eq!(display_path(&&owned), expected, "a double reference works too");
+        assert_eq!(display_path(owned.clone()), expected, "an owned path works too");
+    }
+
+    #[test]
+    fn display_path_leaves_an_ordinary_unix_name_alone() {
+        // Only Windows is rewritten. On Unix this must be untouched, because a
+        // backslash is a legal character in a filename there.
+        let odd = Path::new("weird\\name.txt");
+        let shown = display_path(odd);
+        if cfg!(windows) {
+            assert_eq!(shown, "weird/name.txt");
+        } else {
+            assert_eq!(shown, "weird\\name.txt");
+        }
+    }
+
     use std::fs;
 
     fn scratch(name: &str) -> PathBuf {
