@@ -92,7 +92,9 @@ jobs:
             exit 0
           }
 
-          $target = $windows[0]
+          # Prefer notepad over whatever else the runner has open.
+          $target = $windows | Where-Object { $_.title -match 'Notepad' } | Select-Object -First 1
+          if (-not $target) { $target = $windows[0] }
           Write-Host "found $($windows.Count) window(s); using '$($target.title)' ($($target.handle))"
 
           cargo run --quiet -- pager snap $target.handle --position left
@@ -105,9 +107,12 @@ jobs:
           $after = cargo run --quiet -- pager list --json | ConvertFrom-Json |
             Where-Object { $_.handle -eq $target.handle }
           if (-not $after) { throw "the window disappeared after snapping" }
+          # The rect carries edges, not a size.
+          $width = $after.rect.right - $after.rect.left
+          $height = $after.rect.bottom - $after.rect.top
           if ($after.rect.left -ne 0) { throw "snap left did not put the window at x=0, got $($after.rect.left)" }
-          if ($after.rect.width -le 0 -or $after.rect.height -le 0) { throw "the window has no size after snapping" }
-          Write-Host "snapped to $($after.rect.left),$($after.rect.top) $($after.rect.width)x$($after.rect.height)"
+          if ($width -le 0 -or $height -le 0) { throw "the window has no size after snapping: ${width}x${height}" }
+          Write-Host "snapped to $($after.rect.left),$($after.rect.top) ${width}x${height}"
 
           Stop-Process -Name notepad -ErrorAction SilentlyContinue
 
