@@ -92,7 +92,10 @@ for key, args in COMMANDS.items():
         sys.exit("{} failed: {}".format(key, result.stderr.strip()))
     captured[key] = result.stdout.rstrip("\n")
 
-json.dump(captured, open(out, "w"), indent=2)
-open(out, "a").write("\n")
+# newline="" so Windows writes the same bytes as Linux: the file is compared
+# byte for byte on every platform.
+with open(out, "w", newline="\n") as handle:
+    json.dump(captured, handle, indent=2)
+    handle.write("\n")
 print("captured", len(captured), "outputs to", out)
 PY
