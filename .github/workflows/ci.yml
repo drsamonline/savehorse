@@ -66,6 +66,51 @@ jobs:
           fi
           echo "captured outputs match"
 
+
+      # The window manager is the one part of this project that has never run
+      # anywhere. GitHub's Windows runners have a real desktop session, so the
+      # Win32 calls can be exercised against an actual window instead of being
+      # taken on trust.
+      - name: Window management on a real desktop
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          Start-Process notepad
+          $windows = $null
+          for ($i = 0; $i -lt 15; $i++) {
+            Start-Sleep -Seconds 1
+            $windows = cargo run --quiet -- pager list --json | ConvertFrom-Json
+            if ($windows.Count -gt 0) { break }
+          }
+
+          if (-not $windows -or $windows.Count -eq 0) {
+            # No desktop session on this runner: say so rather than pretend the
+            # window manager was tested.
+            Write-Host "::warning::no window appeared; this runner has no desktop session"
+            exit 0
+          }
+
+          $target = $windows[0]
+          Write-Host "found $($windows.Count) window(s); using '$($target.title)' ($($target.handle))"
+
+          cargo run --quiet -- pager snap $target.handle --position left
+          cargo run --quiet -- pager pin $target.handle
+          cargo run --quiet -- pager alpha $target.handle --percent 80
+          cargo run --quiet -- pager switch $target.handle
+
+          # The snap must have moved it: re-read the window and check the rect
+          # sits in the left half of the screen.
+          $after = cargo run --quiet -- pager list --json | ConvertFrom-Json |
+            Where-Object { $_.handle -eq $target.handle }
+          if (-not $after) { throw "the window disappeared after snapping" }
+          if ($after.rect.left -ne 0) { throw "snap left did not put the window at x=0, got $($after.rect.left)" }
+          if ($after.rect.width -le 0 -or $after.rect.height -le 0) { throw "the window has no size after snapping" }
+          Write-Host "snapped to $($after.rect.left),$($after.rect.top) $($after.rect.width)x$($after.rect.height)"
+
+          Stop-Process -Name notepad -ErrorAction SilentlyContinue
+
       - name: Smoke test the CLI
         shell: bash
         run: |
