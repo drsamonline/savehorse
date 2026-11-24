@@ -377,12 +377,17 @@ mod backend {
         Ok("win32".to_string())
     }
 
-    pub fn rollup(handle_text: &str, height: i32) -> Result<String> {
+    pub fn rollup(handle_text: &str, height: i32) -> Result<(i32, String)> {
         let hwnd = parse_handle(handle_text)?;
         unsafe {
             SetWindowPos(hwnd, 0, 0, 0, 0, height, SWP_NOMOVE | SWP_NOZORDER);
+            // Windows enforces a minimum window height, so asking for the title
+            // bar alone often lands a little taller. Report what happened
+            // rather than what was asked for.
+            let mut rect = WinRect::default();
+            GetWindowRect(hwnd, &mut rect);
+            Ok((rect.bottom - rect.top, "win32".to_string()))
         }
-        Ok("win32".to_string())
     }
 }
 
@@ -507,7 +512,7 @@ mod backend {
         Err(unsupported("window opacity"))
     }
 
-    pub fn rollup(_handle: &str, _height: i32) -> Result<String> {
+    pub fn rollup(_handle: &str, _height: i32) -> Result<(i32, String)> {
         Err(unsupported("window roll-up"))
     }
 }
@@ -578,7 +583,7 @@ mod backend {
         Err(unsupported("window opacity"))
     }
 
-    pub fn rollup(_handle: &str, _height: i32) -> Result<String> {
+    pub fn rollup(_handle: &str, _height: i32) -> Result<(i32, String)> {
         Err(unsupported("window roll-up"))
     }
 }
@@ -605,7 +610,7 @@ mod backend {
     pub fn alpha(_h: &str, _p: u8) -> Result<String> {
         Err(unsupported("window opacity"))
     }
-    pub fn rollup(_h: &str, _hh: i32) -> Result<String> {
+    pub fn rollup(_h: &str, _hh: i32) -> Result<(i32, String)> {
         Err(unsupported("window roll-up"))
     }
 }
@@ -678,11 +683,20 @@ pub fn set_alpha(handle: &str, percent: u8) -> Result<ActionResult> {
 }
 
 pub fn rollup(handle: &str, height: i32) -> Result<ActionResult> {
-    let backend_name = backend::rollup(handle, height)?;
+    let (achieved, backend_name) = backend::rollup(handle, height)?;
+    let detail = if achieved == height {
+        format!("window height set to {}", achieved)
+    } else {
+        // Windows will not go below its minimum window height.
+        format!(
+            "window height is {} — the platform refused to go to {}",
+            achieved, height
+        )
+    };
     Ok(ActionResult {
         handle: handle.to_string(),
         action: "rollup".to_string(),
-        detail: format!("window height set to {}", height),
+        detail,
         backend: backend_name,
     })
 }
