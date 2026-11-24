@@ -245,6 +245,33 @@ jobs:
           cargo run --quiet -- forge hexdump smoke/px.png --length 32
           cargo run --quiet -- forge search smoke/px.png --hex "89504E47"
           cargo run --quiet -- forge patch smoke/px.png --offset 0 --hex "89504E47" --dry-run
+          # A minimal but valid PE32+, byte for byte the fixture the unit tests
+          # use, so forge sections can be exercised end to end.
+          python3 -c "
+          pe = bytearray(0x300)
+          pe[0:2] = b'MZ'
+          pe[60:64] = (0x80).to_bytes(4, 'little')
+          pe[0x80:0x84] = b'PE\0\0'
+          pe[0x84:0x86] = (0x8664).to_bytes(2, 'little')
+          pe[0x86:0x88] = (1).to_bytes(2, 'little')
+          pe[0x94:0x96] = (0xF0).to_bytes(2, 'little')
+          opt = 0x98
+          pe[opt:opt+2] = (0x020B).to_bytes(2, 'little')
+          pe[opt+16:opt+20] = (0x1000).to_bytes(4, 'little')
+          pe[opt+24:opt+32] = (0x140000000).to_bytes(8, 'little')
+          pe[opt+68:opt+70] = (3).to_bytes(2, 'little')
+          sec = 0x98 + 0xF0
+          pe[sec:sec+5] = b'.text'
+          pe[sec+8:sec+12] = (0x100).to_bytes(4, 'little')
+          pe[sec+12:sec+16] = (0x1000).to_bytes(4, 'little')
+          pe[sec+16:sec+20] = (0x100).to_bytes(4, 'little')
+          pe[sec+20:sec+24] = (0x200).to_bytes(4, 'little')
+          pe[sec+36:sec+40] = (0x60000020).to_bytes(4, 'little')
+          for i in range(0x200, 0x300): pe[i] = i % 251
+          open('smoke/min.exe','wb').write(pe)"
+          cargo run --quiet -- forge inspect smoke/min.exe
+          cargo run --quiet -- forge sections smoke/min.exe | grep -q ".text"
+
           if cargo run --quiet -- forge inspect smoke/px.png 2>err2.txt; then
             echo "a PNG must not pass as a PE"
             exit 1
