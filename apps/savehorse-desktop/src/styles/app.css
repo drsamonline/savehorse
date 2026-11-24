@@ -1074,3 +1074,11 @@ select.input {
 }
 
 .empty-mark svg { width: 100%; height: 100%; }
+
+/* The shortcut hint rides inside the primary button, quietly. */
+.kbd-hint {
+  margin-left: 8px;
+  font-size: 10px;
+  opacity: 0.55;
+  letter-spacing: 0.04em;
+}

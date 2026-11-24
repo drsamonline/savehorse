@@ -186,6 +186,7 @@ export function OpForm({
           <div className="actions">
             <button className="run" onClick={onRun} disabled={running || !canRun || planned}>
               {planned ? "Not ported yet" : running ? "Running…" : destructive ? "Preview" : "Run"}
+          {!planned && !running && <span className="kbd-hint">⌘↵</span>}
             </button>
           </div>
         </div>

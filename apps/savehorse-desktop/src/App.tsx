@@ -165,11 +165,21 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // The key handler is installed once, so it reads the current action through a
+  // ref rather than closing over the first render's copy.
+  const runNow = useRef<() => void>(() => {});
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPaletteOpen((v) => !v);
+      } else if (e.key === "Enter") {
+        // The keystroke you press all day: run what is on screen.
+        e.preventDefault();
+        runNow.current();
       }
     }
     window.addEventListener("keydown", onKey);
@@ -308,6 +318,13 @@ export default function App() {
         .filter((p) => p.required && p.kind !== "Bool")
         .every((p) => (values[p.name] ?? "").trim() !== ""),
   );
+
+  // Keep the global shortcut pointed at the current state of the form.
+  useEffect(() => {
+    runNow.current = () => {
+      if (canRun && !running) void run();
+    };
+  }, [canRun, running, run]);
 
   const echo = currentOp
     ? cliEcho(activeModule, currentOp, values, apply)
