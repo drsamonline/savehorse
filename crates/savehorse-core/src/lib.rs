@@ -126,6 +126,26 @@ pub fn crc32(data: &[u8]) -> u32 {
 }
 
 /// Streaming SHA-256 of a file, returned as lowercase hex.
+
+/// A path as the tool prints it.
+///
+/// Windows renders separators as backslashes, so the same command reported
+/// `smoke\a.txt` there and `smoke/a.txt` everywhere else — which made the
+/// documented examples untrue on Windows and stopped one captured output
+/// being comparable across platforms. Forward slashes are the convention the
+/// docs and the demo already use.
+///
+/// Only Windows is rewritten. A backslash is a legal character in a Unix
+/// filename, and silently turning one into a separator would misreport it.
+pub fn display_path(path: &Path) -> String {
+    let text = path.to_string_lossy();
+    if cfg!(windows) {
+        text.replace('\\', "/")
+    } else {
+        text.into_owned()
+    }
+}
+
 pub fn sha256_file(path: &Path) -> Result<String> {
     use sha2::{Digest, Sha256};
     use std::io::Read;
@@ -253,7 +273,7 @@ pub fn walk_files(root: &Path, opts: &WalkOptions) -> Result<Vec<PathBuf>> {
         return Ok(vec![root.to_path_buf()]);
     }
     if !root.exists() {
-        return Err(Error::NotFound(root.display().to_string()));
+        return Err(Error::NotFound(display_path(root)));
     }
     let mut out = Vec::new();
     walk_into(root, 0, opts, &mut out)?;
@@ -270,7 +290,7 @@ pub fn require_exists(path: &Path) -> Result<()> {
     if path.exists() {
         Ok(())
     } else {
-        Err(Error::NotFound(path.display().to_string()))
+        Err(Error::NotFound(display_path(path)))
     }
 }
 

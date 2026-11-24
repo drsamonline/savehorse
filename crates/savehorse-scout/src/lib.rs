@@ -415,7 +415,7 @@ pub fn analyze_treemap(root: &Path) -> Result<TreemapReport> {
     if !root.is_dir() {
         return Err(Error::Invalid(format!(
             "'{}' is not a directory",
-            root.display()
+            savehorse_core::display_path(&root)
         )));
     }
 
@@ -533,7 +533,7 @@ pub fn inspect_directory(root: &Path) -> Result<InventoryReport> {
     if !root.is_dir() {
         return Err(Error::Invalid(format!(
             "'{}' is not a directory",
-            root.display()
+            savehorse_core::display_path(&root)
         )));
     }
 

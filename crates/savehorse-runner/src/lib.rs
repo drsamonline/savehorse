@@ -399,7 +399,7 @@ fn scout_duplicates(req: &Request) -> Result<Outcome> {
 
     let mut text = format!(
         "Duplicate scan of '{}':\n  clusters           : {}\n  redundant files    : {}\n  recoverable space  : {}\n",
-        root.display(),
+        savehorse_core::display_path(&root),
         summary.total_clusters,
         summary.total_duplicate_files,
         summary.total_wasted_human
@@ -481,7 +481,7 @@ fn glyph_pdf(req: &Request) -> Result<Outcome> {
     let title = req.value("title").unwrap_or("Untitled");
 
     let text = fs::read_to_string(&input)
-        .map_err(|e| Error::Invalid(format!("{}: {}", input.display(), e)))?;
+        .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&input), e)))?;
     let lines: Vec<String> = text.lines().map(|l| l.to_string()).collect();
 
     let report = savehorse_glyph::create_pdf(title, &lines, &out)?;
@@ -513,7 +513,7 @@ fn glyph_markdown(req: &Request) -> Result<Outcome> {
     let title = req.value("title").unwrap_or("Document");
 
     let md = fs::read_to_string(&input)
-        .map_err(|e| Error::Invalid(format!("{}: {}", input.display(), e)))?;
+        .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&input), e)))?;
     let html = savehorse_glyph::compile_markdown_to_html(&md, title);
 
     match req.value("out") {
@@ -609,7 +609,7 @@ fn halo_list(req: &Request) -> Result<Outcome> {
 
     let mut text = format!(
         "image      {}\nvolume     {}\nsectors    {} ({} KB)\n\n{:<28} {:<10} {}\n{}\n",
-        image.display(),
+        savehorse_core::display_path(&image),
         info.volume_id,
         info.total_sectors,
         info.total_sectors * 2,
@@ -653,9 +653,9 @@ fn halo_verify(req: &Request) -> Result<Outcome> {
     let r = savehorse_halo::verify_image(&image)?;
 
     let mut text = if r.valid {
-        format!("OK '{}' is a valid ISO 9660 image\n", image.display())
+        format!("OK '{}' is a valid ISO 9660 image\n", savehorse_core::display_path(&image))
     } else {
-        format!("FAILED '{}' has problems\n", image.display())
+        format!("FAILED '{}' has problems\n", savehorse_core::display_path(&image))
     };
     text.push_str(&format!(
         "volume     {}\nsectors    {}\nfiles      {}\n{}\n",
@@ -896,7 +896,7 @@ fn arc_split(req: &Request) -> Result<Outcome> {
             manifest.total_size,
             manifest.chunk_count,
             manifest.chunk_size,
-            out.display()
+            savehorse_core::display_path(&out)
         ),
         to_json(&manifest)?,
     ))
@@ -956,7 +956,7 @@ fn revive_carve(req: &Request) -> Result<Outcome> {
 
     let mut text = format!(
         "carved {} file(s) from '{}' into '{}' ({} byte(s))\n",
-        summary.artifacts_found, summary.source_file, out.display(), summary.total_recovered_bytes
+        summary.artifacts_found, summary.source_file, savehorse_core::display_path(&out), summary.total_recovered_bytes
     );
     for a in &summary.artifacts {
         if let Some(ref saved) = a.saved_filename {
@@ -976,7 +976,7 @@ fn revive_report(req: &Request) -> Result<Outcome> {
         Some(dest) if !dest.trim().is_empty() => {
             fs::write(dest, &report)?;
             Ok(Outcome::new(
-                format!("wrote a recovery report for '{}' to '{}'\n", path.display(), dest),
+                format!("wrote a recovery report for '{}' to '{}'\n", savehorse_core::display_path(&path), dest),
                 to_json(&summary)?,
             ))
         }

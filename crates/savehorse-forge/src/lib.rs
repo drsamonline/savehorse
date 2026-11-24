@@ -476,7 +476,7 @@ pub fn apply_patch(
     file.read_exact(&mut original)?;
 
     let backup_created = if write && create_backup {
-        let bak = format!("{}.bak", path.display());
+        let bak = format!("{}.bak", savehorse_core::display_path(&path));
         fs::copy(path, &bak)?;
         Some(bak)
     } else {

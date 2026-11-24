@@ -225,7 +225,7 @@ pub fn search_paths(
         for (idx, line) in text.lines().enumerate() {
             if let Some(m) = re.find(line) {
                 results.push(SearchResult {
-                    file: path.display().to_string(),
+                    file: savehorse_core::display_path(&path),
                     line_number: idx + 1,
                     content: line.to_string(),
                     match_start: m.start(),
@@ -291,7 +291,7 @@ pub fn replace_paths(
         if dry_run {
             outcome.log.push(format!(
                 "[preview] {}: would replace {} occurrence(s)",
-                path.display(),
+                savehorse_core::display_path(&path),
                 hits
             ));
             continue;
@@ -309,7 +309,7 @@ pub fn replace_paths(
         fs::write(&path, replaced)?;
         outcome
             .log
-            .push(format!("{}: replaced {} occurrence(s)", path.display(), hits));
+            .push(format!("{}: replaced {} occurrence(s)", savehorse_core::display_path(&path), hits));
     }
 
     Ok(outcome)

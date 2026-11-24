@@ -124,7 +124,7 @@ fn color_type_name(c: ColorType) -> &'static str {
 }
 
 fn open(path: &Path) -> Result<image::DynamicImage> {
-    image::open(path).map_err(|e| Error::Invalid(format!("{}: {}", path.display(), e)))
+    image::open(path).map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&path), e)))
 }
 
 fn ensure_parent(path: &Path) -> Result<()> {
@@ -171,7 +171,7 @@ pub fn convert_image(source: &Path, out_path: &Path) -> Result<ConvertResult> {
     let img = open(source)?;
     ensure_parent(out_path)?;
     img.save(out_path)
-        .map_err(|e| Error::Invalid(format!("{}: {}", out_path.display(), e)))?;
+        .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&out_path), e)))?;
 
     let (w, h) = (img.width(), img.height());
     let size = fs::metadata(out_path)?.len();
@@ -200,7 +200,7 @@ pub fn thumb_image(source: &Path, out_path: &Path, width: u32, height: u32) -> R
     ensure_parent(out_path)?;
     thumb
         .save(out_path)
-        .map_err(|e| Error::Invalid(format!("{}: {}", out_path.display(), e)))?;
+        .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&out_path), e)))?;
     let size = fs::metadata(out_path)?.len();
 
     Ok(ThumbResult {
@@ -243,7 +243,7 @@ pub fn transform_image(
 
     ensure_parent(out_path)?;
     img.save(out_path)
-        .map_err(|e| Error::Invalid(format!("{}: {}", out_path.display(), e)))?;
+        .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&out_path), e)))?;
 
     Ok(TransformResult {
         source_file: source.to_string_lossy().to_string(),
@@ -335,7 +335,7 @@ pub fn batch_process(
         let img = match image::open(&path) {
             Ok(i) => i,
             Err(e) => {
-                failed.push(format!("{}: {}", path.display(), e));
+                failed.push(format!("{}: {}", savehorse_core::display_path(&path), e));
                 continue;
             }
         };
@@ -354,7 +354,7 @@ pub fn batch_process(
 
         match saved {
             Ok(()) => processed.push(dest.to_string_lossy().to_string()),
-            Err(e) => failed.push(format!("{}: {}", dest.display(), e)),
+            Err(e) => failed.push(format!("{}: {}", savehorse_core::display_path(&dest), e)),
         }
     }
 
@@ -485,7 +485,7 @@ pub fn contact_sheet_svg(source_dir: &Path, out_path: &Path, cell: u32, columns:
     if !source_dir.is_dir() {
         return Err(Error::Invalid(format!(
             "'{}' is not a directory",
-            source_dir.display()
+            savehorse_core::display_path(&source_dir)
         )));
     }
 

@@ -99,7 +99,7 @@ fn derive_key(passphrase: Option<&str>, keyfile: Option<&Path>, salt: &[u8]) -> 
     }
     if let Some(kf) = keyfile {
         let bytes = fs::read(kf)
-            .map_err(|e| Error::Invalid(format!("cannot read keyfile '{}': {}", kf.display(), e)))?;
+            .map_err(|e| Error::Invalid(format!("cannot read keyfile '{}': {}", savehorse_core::display_path(&kf), e)))?;
         secret.extend_from_slice(&bytes);
     }
 
@@ -273,7 +273,7 @@ pub fn decrypt(
 /// With `dry_run` nothing is touched.
 pub fn shred(path: &Path, dry_run: bool) -> Result<ShredReport> {
     if !path.is_file() {
-        return Err(Error::NotFound(path.display().to_string()));
+        return Err(Error::NotFound(savehorse_core::display_path(&path)));
     }
 
     let original_size = fs::metadata(path)?.len();
@@ -412,7 +412,7 @@ fn inspect_file(path: &Path, signatures: &[Signature], threats: &mut Vec<ThreatI
 /// signatures.
 pub fn scan(target: &Path, signatures: &[Signature]) -> Result<ScanReport> {
     if !target.exists() {
-        return Err(Error::NotFound(target.display().to_string()));
+        return Err(Error::NotFound(savehorse_core::display_path(&target)));
     }
 
     let mut files_scanned = 0usize;
@@ -836,7 +836,7 @@ mod tests {
             entries_dir.join("app.desktop"),
             format!(
                 "[Desktop Entry]\nType=Application\nName=Test\nExec={} --flag\n",
-                real_target.display()
+                savehorse_core::display_path(&real_target)
             ),
         )
         .unwrap();

@@ -77,7 +77,7 @@ pub fn audit_temp(directory: Option<&Path>, top: usize) -> Result<TempReport> {
     if !root.is_dir() {
         return Err(Error::Invalid(format!(
             "'{}' is not a directory",
-            root.display()
+            savehorse_core::display_path(&root)
         )));
     }
 

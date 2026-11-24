@@ -487,7 +487,7 @@ pub fn analyze_word_count(text: &str) -> WordCountReport {
 /// Read a file and measure it.
 pub fn analyze_file_readability(path: &Path) -> Result<WordCountReport> {
     let text = fs::read_to_string(path)
-        .map_err(|e| Error::Invalid(format!("{}: {}", path.display(), e)))?;
+        .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&path), e)))?;
     Ok(analyze_word_count(&text))
 }
 

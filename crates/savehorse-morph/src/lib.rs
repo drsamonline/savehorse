@@ -327,7 +327,7 @@ pub fn rename(
         fs::write(path, text).map_err(|e| {
             Error::Invalid(format!(
                 "could not write the undo journal to '{}': {} — nothing was renamed",
-                path.display(),
+                savehorse_core::display_path(&path),
                 e
             ))
         })?;
@@ -358,7 +358,7 @@ pub fn rename(
 /// Put every rename in a journal back, newest first.
 pub fn undo(journal_path: &Path, dry_run: bool) -> Result<RenameReport> {
     if !journal_path.exists() {
-        return Err(Error::NotFound(journal_path.display().to_string()));
+        return Err(Error::NotFound(savehorse_core::display_path(&journal_path)));
     }
 
     let text = fs::read_to_string(journal_path)?;

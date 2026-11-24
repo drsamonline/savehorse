@@ -158,7 +158,7 @@ pub fn create_image(source_dir: &Path, out_path: &Path, volume_id: &str) -> Resu
     if !source_dir.is_dir() {
         return Err(Error::Invalid(format!(
             "'{}' is not a directory",
-            source_dir.display()
+            savehorse_core::display_path(&source_dir)
         )));
     }
 
@@ -170,7 +170,7 @@ pub fn create_image(source_dir: &Path, out_path: &Path, volume_id: &str) -> Resu
         if path.is_dir() {
             return Err(Error::Invalid(format!(
                 "subdirectories are not supported yet: '{}' would be left out of the image",
-                path.display()
+                savehorse_core::display_path(&path)
             )));
         }
         if path.is_file() {

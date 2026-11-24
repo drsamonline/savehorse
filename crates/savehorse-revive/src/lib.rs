@@ -444,7 +444,7 @@ pub fn pack_directory(source_dir: &Path, archive_path: &Path) -> Result<PackRepo
     if !source_dir.is_dir() {
         return Err(Error::Invalid(format!(
             "'{}' is not a directory",
-            source_dir.display()
+            savehorse_core::display_path(&source_dir)
         )));
     }
 

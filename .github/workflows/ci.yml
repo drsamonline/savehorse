@@ -57,9 +57,6 @@ jobs:
       # change to any of those operations' output left the demo showing stale
       # text with every test green.
       - name: The demo's captured outputs are current
-        # The captures are one file, generated on Linux. Windows prints paths
-        # with backslashes, so comparing there would always differ.
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           bash scripts/capture_demo.sh /tmp/captured.json

@@ -373,7 +373,7 @@ pub fn split_file(file_path: &Path, chunk_size: u64, out_dir: &Path) -> Result<S
         return Err(Error::Invalid("chunk size must be greater than zero".to_string()));
     }
     if !file_path.is_file() {
-        return Err(Error::NotFound(file_path.display().to_string()));
+        return Err(Error::NotFound(savehorse_core::display_path(&file_path)));
     }
 
     let mut source = BufReader::new(File::open(file_path)?);
