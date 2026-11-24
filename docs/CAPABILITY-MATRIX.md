@@ -8,6 +8,14 @@ folded into thirteen modules.
 
 
 
+## Known inconsistencies
+
+- **Path separators in output.** `sift search` and friends print the path as
+  the platform does, so the same command reports `smoke/a.txt:1:` on Linux and
+  macOS but `smoke\a.txt:1:` on Windows. The user guide and the demo show the
+  forward-slash form. Normalising it everywhere is the right fix and has not
+  been done; until then the captured demo outputs are compared on Linux only.
+
 ## Guards
 
 Six checks exist because each one has already caught a real mistake. Every one
