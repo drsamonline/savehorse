@@ -4,6 +4,12 @@
 
 # savehorse
 
+<!-- shot:start -->
+
+![Screenshot](docs/shot.png)
+
+<!-- shot:end -->
+
 **One bench, thirteen tools.**
 
 [![CI](https://github.com/drsamonline/savehorse/actions/workflows/ci.yml/badge.svg)](https://github.com/drsamonline/savehorse/actions/workflows/ci.yml)
