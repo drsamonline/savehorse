@@ -9,6 +9,30 @@ import { JobDock } from "./components/JobDock";
 
 const MAX_JOBS = 20;
 
+/** Where an operation's last-used values live. */
+function memoryKey(op: OpView): string {
+  return `savehorse.form.${op.id}`;
+}
+
+/** What was last typed for this operation, if anything. */
+function remembered(op: OpView): Record<string, string> {
+  const fallback = defaultValues(op);
+  try {
+    const raw = window.localStorage.getItem(memoryKey(op));
+    if (!raw) return fallback;
+    const saved = JSON.parse(raw) as Record<string, string>;
+    // Only keep keys the operation still declares, so a renamed parameter
+    // cannot resurrect an old value.
+    const out: Record<string, string> = { ...fallback };
+    for (const p of op.params) {
+      if (typeof saved[p.name] === "string") out[p.name] = saved[p.name];
+    }
+    return out;
+  } catch {
+    return fallback;
+  }
+}
+
 function defaultValues(op: OpView | null): Record<string, string> {
   const values: Record<string, string> = {};
   if (!op) return values;
@@ -147,17 +171,34 @@ export default function App() {
     document.documentElement.dataset.module = activeModule;
   }, [activeModule]);
 
-  // Reset the form whenever the operation changes.
+  // Reset the form whenever the operation changes — but restore what was last
+  // typed for that operation. Switching to another tool and back should not
+  // cost you the paths you had just filled in.
   useEffect(() => {
     if (pendingValues.current) {
       setValues(pendingValues.current);
       pendingValues.current = null;
+    } else if (currentOp) {
+      setValues(remembered(currentOp));
     } else {
-      setValues(defaultValues(currentOp));
+      setValues({});
     }
     setApply(false);
     setError(null);
   }, [currentOp]);
+
+  // Remember the form as it is typed, per operation.
+  useEffect(() => {
+    if (!currentOp) return;
+    const key = memoryKey(currentOp);
+    try {
+      if (Object.values(values).some((v) => v.trim() !== "")) {
+        window.localStorage.setItem(key, JSON.stringify(values));
+      }
+    } catch {
+      // Storage can be refused; the form simply does not persist.
+    }
+  }, [values, currentOp]);
 
   useEffect(() => {
     if (!toast) return;
