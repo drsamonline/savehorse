@@ -35,3 +35,10 @@ html = html.replace('<title>Savehorse</title>', '<title>Savehorse — interface 
 open('demo/index.html', 'w').write(html)
 print(f"demo: {len(manifest)} modules, {sum(len(m['ops']) for m in manifest)} operations, {len(captured)} captured outputs")
 PY
+
+# The delivered site serves the interface from docs/play, which the delivery
+# tool treats as the app source. Keep it identical to demo/ so the two cannot
+# drift; the icon the generated landing page asks for is written alongside it.
+rm -rf docs/play
+cp -r demo docs/play
+cp docs/assets/play-icon.svg docs/play/icon.svg

@@ -46,9 +46,9 @@ jobs:
         working-directory: .
         run: |
           bash scripts/build-demo.sh
-          if ! git diff --quiet -- demo; then
-            echo "::error::demo/ is out of date. Run scripts/build-demo.sh and commit the result."
-            git --no-pager diff --stat -- demo
+          if ! git diff --quiet -- demo docs/play; then
+            echo "::error::demo/ or docs/play is out of date. Run scripts/build-demo.sh and commit the result."
+            git --no-pager diff --stat -- demo docs/play
             exit 1
           fi
 
