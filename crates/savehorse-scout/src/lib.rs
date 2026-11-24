@@ -116,7 +116,7 @@ pub fn build_catalog(root: &Path, opts: &WalkOptions) -> Result<Vec<CatalogEntry
             .to_string_lossy()
             .replace('\\', "/");
         entries.push(CatalogEntry {
-            path: path.to_string_lossy().to_string(),
+            path: savehorse_core::display_path(&path),
             relative_path: relative,
             size_bytes: size,
             size_human: format_bytes(size),
@@ -279,7 +279,7 @@ pub fn find_duplicates(
                 by_hash
                     .entry(hash)
                     .or_default()
-                    .push(path.to_string_lossy().to_string());
+                    .push(savehorse_core::display_path(&path));
             }
         }
 
@@ -437,7 +437,7 @@ pub fn analyze_treemap(root: &Path) -> Result<TreemapReport> {
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default(),
-            path: path.to_string_lossy().to_string(),
+            path: savehorse_core::display_path(&path),
             is_dir,
             size_bytes: size,
             percentage: 0.0,
@@ -454,7 +454,7 @@ pub fn analyze_treemap(root: &Path) -> Result<TreemapReport> {
     items.sort_by(|a, b| b.size_bytes.cmp(&a.size_bytes));
 
     Ok(TreemapReport {
-        root_path: root.to_string_lossy().to_string(),
+        root_path: savehorse_core::display_path(&root),
         total_size_bytes: total,
         total_items: items.len(),
         items,
@@ -583,7 +583,7 @@ pub fn inspect_directory(root: &Path) -> Result<InventoryReport> {
     count_dirs(root, &mut directories);
 
     Ok(InventoryReport {
-        root_directory: root.to_string_lossy().to_string(),
+        root_directory: savehorse_core::display_path(&root),
         total_files: files.len(),
         total_directories: directories,
         total_bytes,

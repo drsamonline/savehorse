@@ -2174,7 +2174,7 @@ mod tests {
 
         let req = Request::new("sift", "search")
             .arg("needle")
-            .arg(file.to_string_lossy().to_string());
+            .arg(savehorse_core::display_path(&file));
         let out = execute(&req).unwrap();
 
         assert!(out.text.contains("1 match(es)"), "got: {}", out.text);
@@ -2192,7 +2192,7 @@ mod tests {
         let req = Request::new("sift", "replace")
             .arg("cat")
             .arg("dog")
-            .arg(file.to_string_lossy().to_string())
+            .arg(savehorse_core::display_path(&file))
             .flag("dry-run", "true");
         let out = execute(&req).unwrap();
 
@@ -2207,7 +2207,7 @@ mod tests {
         fs::write(dir.join("a.txt"), b"same").unwrap();
         fs::write(dir.join("b.txt"), b"same").unwrap();
 
-        let req = Request::new("scout", "clean").arg(dir.to_string_lossy().to_string());
+        let req = Request::new("scout", "clean").arg(savehorse_core::display_path(&dir));
         let out = execute(&req).unwrap();
 
         assert!(out.dry_run);
@@ -2221,7 +2221,7 @@ mod tests {
         fs::write(dir.join("a.txt"), b"x").unwrap();
 
         let req = Request::new("scout", "catalog")
-            .arg(dir.to_string_lossy().to_string())
+            .arg(savehorse_core::display_path(&dir))
             .flag("format", "json");
         let out = execute(&req).unwrap();
 

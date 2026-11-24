@@ -238,7 +238,7 @@ pub fn inspect_pe(path: &Path) -> Result<PeHeaderInfo> {
     };
 
     Ok(PeHeaderInfo {
-        file_path: path.to_string_lossy().to_string(),
+        file_path: savehorse_core::display_path(&path),
         is_valid_pe: true,
         machine_type,
         is_64bit,
@@ -491,7 +491,7 @@ pub fn apply_patch(
     }
 
     Ok(PatchResult {
-        file: path.to_string_lossy().to_string(),
+        file: savehorse_core::display_path(&path),
         offset,
         bytes_patched: bytes.len(),
         original_bytes: hex_of(&original),
@@ -570,7 +570,7 @@ pub fn security_flags(path: &Path) -> Result<SecurityFlags> {
     };
 
     Ok(SecurityFlags {
-        file_path: path.to_string_lossy().to_string(),
+        file_path: savehorse_core::display_path(&path),
         is_64bit,
         machine_type: machine_type.to_string(),
         dep: characteristics & 0x0100 != 0,

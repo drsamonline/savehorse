@@ -56,7 +56,7 @@ pub fn hash_file(path: &Path) -> Result<HashReport> {
     let size = data.len() as u64;
 
     Ok(HashReport {
-        file: path.to_string_lossy().to_string(),
+        file: savehorse_core::display_path(&path),
         size_bytes: size,
         size_human: format_bytes(size),
         crc32: format!("{:08x}", crc32(&data)),
@@ -99,7 +99,7 @@ pub fn audit_temp(directory: Option<&Path>, top: usize) -> Result<TempReport> {
         };
         total += size;
         entries.push(TempEntry {
-            path: file.to_string_lossy().to_string(),
+            path: savehorse_core::display_path(&file),
             size_bytes: size,
             size_human: format_bytes(size),
         });
@@ -109,7 +109,7 @@ pub fn audit_temp(directory: Option<&Path>, top: usize) -> Result<TempReport> {
     entries.truncate(top.max(1));
 
     Ok(TempReport {
-        directory: root.to_string_lossy().to_string(),
+        directory: savehorse_core::display_path(&root),
         files: files.len(),
         total_bytes: total,
         total_human: format_bytes(total),

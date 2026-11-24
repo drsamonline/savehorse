@@ -137,8 +137,8 @@ pub fn crc32(data: &[u8]) -> u32 {
 ///
 /// Only Windows is rewritten. A backslash is a legal character in a Unix
 /// filename, and silently turning one into a separator would misreport it.
-pub fn display_path(path: &Path) -> String {
-    let text = path.to_string_lossy();
+pub fn display_path(path: impl AsRef<Path>) -> String {
+    let text = path.as_ref().to_string_lossy();
     if cfg!(windows) {
         text.replace('\\', "/")
     } else {

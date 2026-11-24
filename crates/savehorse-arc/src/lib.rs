@@ -188,7 +188,7 @@ pub fn create_archive(archive_path: &Path, paths: &[PathBuf], store: bool) -> Re
     zip.finish().map_err(|e| zip_err("could not finish archive", e))?;
 
     Ok(CreateReport {
-        archive: archive_path.to_string_lossy().to_string(),
+        archive: savehorse_core::display_path(&archive_path),
         files_added,
         bytes_in,
         bytes_out: fs::metadata(archive_path)?.len(),
@@ -300,13 +300,13 @@ pub fn extract_archive(
             }
             let mut out = File::create(&destination)?;
             io::copy(&mut entry, &mut out)?;
-            extracted.push(destination.to_string_lossy().to_string());
+            extracted.push(savehorse_core::display_path(&destination));
         }
     }
 
     Ok(ExtractReport {
-        archive: archive_path.to_string_lossy().to_string(),
-        output_dir: out_dir.to_string_lossy().to_string(),
+        archive: savehorse_core::display_path(&archive_path),
+        output_dir: savehorse_core::display_path(&out_dir),
         extracted,
         skipped,
     })
@@ -356,7 +356,7 @@ pub fn test_archive(archive_path: &Path) -> Result<TestReport> {
     }
 
     Ok(TestReport {
-        archive: archive_path.to_string_lossy().to_string(),
+        archive: savehorse_core::display_path(&archive_path),
         entries,
         passed,
         failed,
@@ -500,7 +500,7 @@ pub fn join_chunks(input: &Path, output: Option<&Path>) -> Result<JoinReport> {
     out.flush()?;
 
     Ok(JoinReport {
-        output: dest.to_string_lossy().to_string(),
+        output: savehorse_core::display_path(&dest),
         chunks: chunk_paths.len(),
         total_bytes: total,
     })

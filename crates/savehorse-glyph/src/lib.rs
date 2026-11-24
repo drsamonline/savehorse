@@ -144,7 +144,7 @@ pub fn create_pdf(title: &str, lines: &[String], out_path: &Path) -> Result<PdfR
     fs::write(out_path, &pdf)?;
 
     Ok(PdfReport {
-        file_path: out_path.to_string_lossy().to_string(),
+        file_path: out_savehorse_core::display_path(&path),
         bytes_written: pdf.len() as u64,
         title: title.to_string(),
         lines: lines.len(),
@@ -219,7 +219,7 @@ pub fn extract_pdf_text(path: &Path) -> Result<PdfExtractReport> {
     }
 
     Ok(PdfExtractReport {
-        file_path: path.to_string_lossy().to_string(),
+        file_path: savehorse_core::display_path(&path),
         total_pages: page_count,
         lines_count: extracted.len(),
         extracted_text: extracted.join("\n"),
@@ -399,7 +399,7 @@ pub fn analyze_code_metrics(path: &Path) -> Result<CodeMetricsReport> {
     };
 
     Ok(CodeMetricsReport {
-        file_path: path.to_string_lossy().to_string(),
+        file_path: savehorse_core::display_path(&path),
         total_lines,
         code_lines,
         comment_lines,
@@ -448,7 +448,7 @@ pub fn inspect_encoding(path: &Path) -> Result<EncodingReport> {
     };
 
     Ok(EncodingReport {
-        file_path: path.to_string_lossy().to_string(),
+        file_path: savehorse_core::display_path(&path),
         detected_encoding: encoding,
         has_bom,
         line_terminator: term.to_string(),

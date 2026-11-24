@@ -173,8 +173,8 @@ pub fn encrypt(
 
     Ok(CryptoReport {
         operation: "encrypt".to_string(),
-        input_file: input.to_string_lossy().to_string(),
-        output_file: destination.to_string_lossy().to_string(),
+        input_file: savehorse_core::display_path(&input),
+        output_file: savehorse_core::display_path(&destination),
         input_size_bytes: input_size,
         output_size_bytes: fs::metadata(&destination)?.len(),
         cipher: "AES-256-GCM".to_string(),
@@ -252,8 +252,8 @@ pub fn decrypt(
 
     Ok(CryptoReport {
         operation: "decrypt".to_string(),
-        input_file: container.to_string_lossy().to_string(),
-        output_file: destination.to_string_lossy().to_string(),
+        input_file: savehorse_core::display_path(&container),
+        output_file: savehorse_core::display_path(&destination),
         input_size_bytes: file_len,
         output_size_bytes: plaintext.len() as u64,
         cipher: "AES-256-GCM".to_string(),
@@ -280,7 +280,7 @@ pub fn shred(path: &Path, dry_run: bool) -> Result<ShredReport> {
 
     if dry_run {
         return Ok(ShredReport {
-            original_path: path.to_string_lossy().to_string(),
+            original_path: savehorse_core::display_path(&path),
             original_size_bytes: original_size,
             passes_completed: 0,
             method: "DoD 5220.22-M (3 passes)".to_string(),
@@ -328,7 +328,7 @@ pub fn shred(path: &Path, dry_run: bool) -> Result<ShredReport> {
     fs::remove_file(&target)?;
 
     Ok(ShredReport {
-        original_path: path.to_string_lossy().to_string(),
+        original_path: savehorse_core::display_path(&path),
         original_size_bytes: original_size,
         passes_completed: 3,
         method: "DoD 5220.22-M (3 passes)".to_string(),
@@ -365,7 +365,7 @@ fn inspect_file(path: &Path, signatures: &[Signature], threats: &mut Vec<ThreatI
         .file_name()
         .map(|n| n.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    let shown = path.to_string_lossy().to_string();
+    let shown = savehorse_core::display_path(&path);
 
     if name == "autorun.inf" {
         threats.push(ThreatItem {
@@ -432,7 +432,7 @@ pub fn scan(target: &Path, signatures: &[Signature]) -> Result<ScanReport> {
     }
 
     Ok(ScanReport {
-        target_path: target.to_string_lossy().to_string(),
+        target_path: savehorse_core::display_path(&target),
         files_scanned,
         threats_found: threats.len(),
         clean: threats.is_empty(),
@@ -605,12 +605,12 @@ pub fn scan_autostart_dirs(dirs: &[PathBuf]) -> Result<Vec<AutostartEntry>> {
                 .unwrap_or(true);
 
             entries.push(AutostartEntry {
-                location: dir.to_string_lossy().to_string(),
+                location: savehorse_core::display_path(&dir),
                 name: path
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_default(),
-                path: path.to_string_lossy().to_string(),
+                path: savehorse_core::display_path(&path),
                 target,
                 target_exists: exists,
             });

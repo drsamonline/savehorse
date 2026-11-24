@@ -155,7 +155,7 @@ pub fn inspect_image(path: &Path) -> Result<ImageInfo> {
     let (ratio_text, ratio_float) = format_aspect_ratio(w, h);
 
     Ok(ImageInfo {
-        file: path.to_string_lossy().to_string(),
+        file: savehorse_core::display_path(&path),
         format: extension_upper(path, "unknown"),
         width: w,
         height: h,
@@ -177,8 +177,8 @@ pub fn convert_image(source: &Path, out_path: &Path) -> Result<ConvertResult> {
     let size = fs::metadata(out_path)?.len();
 
     Ok(ConvertResult {
-        source_file: source.to_string_lossy().to_string(),
-        output_file: out_path.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&source),
+        output_file: out_savehorse_core::display_path(&path),
         format: extension_upper(out_path, "png"),
         width: w,
         height: h,
@@ -204,8 +204,8 @@ pub fn thumb_image(source: &Path, out_path: &Path, width: u32, height: u32) -> R
     let size = fs::metadata(out_path)?.len();
 
     Ok(ThumbResult {
-        source_file: source.to_string_lossy().to_string(),
-        output_file: out_path.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&source),
+        output_file: out_savehorse_core::display_path(&path),
         original_dimensions: format!("{}x{}", orig_w, orig_h),
         thumbnail_dimensions: format!("{}x{}", new_w, new_h),
         output_byte_size: size,
@@ -246,8 +246,8 @@ pub fn transform_image(
         .map_err(|e| Error::Invalid(format!("{}: {}", savehorse_core::display_path(&out_path), e)))?;
 
     Ok(TransformResult {
-        source_file: source.to_string_lossy().to_string(),
-        output_file: out_path.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&source),
+        output_file: out_savehorse_core::display_path(&path),
         rotation: rotate,
         flip_horizontal: flip_h,
         flip_vertical: flip_v,
@@ -285,7 +285,7 @@ pub fn stats_image(path: &Path) -> Result<ChannelStats> {
     };
 
     Ok(ChannelStats {
-        file: path.to_string_lossy().to_string(),
+        file: savehorse_core::display_path(&path),
         width: w,
         height: h,
         total_pixels,
@@ -353,14 +353,14 @@ pub fn batch_process(
         };
 
         match saved {
-            Ok(()) => processed.push(dest.to_string_lossy().to_string()),
+            Ok(()) => processed.push(savehorse_core::display_path(&dest)),
             Err(e) => failed.push(format!("{}: {}", savehorse_core::display_path(&dest), e)),
         }
     }
 
     Ok(BatchResult {
-        source_dir: in_dir.to_string_lossy().to_string(),
-        output_dir: out_dir.to_string_lossy().to_string(),
+        source_dir: in_savehorse_core::display_path(&dir),
+        output_dir: savehorse_core::display_path(&out_dir),
         target_format: target,
         thumbnail_size: thumb_size,
         processed,
@@ -470,8 +470,8 @@ pub fn write_ico(source: &Path, out_path: &Path, sizes: &[u32]) -> Result<IcoRep
     fs::write(out_path, &ico)?;
 
     Ok(IcoReport {
-        source_file: source.to_string_lossy().to_string(),
-        output_file: out_path.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&source),
+        output_file: out_savehorse_core::display_path(&path),
         sizes: wanted,
         output_byte_size: ico.len() as u64,
     })
@@ -556,8 +556,8 @@ pub fn contact_sheet_svg(source_dir: &Path, out_path: &Path, cell: u32, columns:
     fs::write(out_path, &svg)?;
 
     Ok(SheetReport {
-        source_dir: source_dir.to_string_lossy().to_string(),
-        output_file: out_path.to_string_lossy().to_string(),
+        source_dir: source_savehorse_core::display_path(&dir),
+        output_file: out_savehorse_core::display_path(&path),
         images: placed,
         columns,
         output_byte_size: svg.len() as u64,

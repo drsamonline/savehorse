@@ -35,8 +35,27 @@ fn restore_sigpipe() {
 #[cfg(not(unix))]
 fn restore_sigpipe() {}
 
+/// Windows consoles default to a legacy code page, so the em dash and arrows in
+/// the output render as mojibake. Switching the output code page to UTF-8 fixes
+/// what the reader sees; it does not change the bytes the program writes.
+#[cfg(windows)]
+fn use_utf8_console() {
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn SetConsoleOutputCP(code_page: u32) -> i32;
+    }
+    const CP_UTF8: u32 = 65001;
+    unsafe {
+        SetConsoleOutputCP(CP_UTF8);
+    }
+}
+
+#[cfg(not(windows))]
+fn use_utf8_console() {}
+
 fn main() -> ExitCode {
     restore_sigpipe();
+    use_utf8_console();
     match run() {
         Ok(code) => code,
         Err(e) => {

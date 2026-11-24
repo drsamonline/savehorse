@@ -87,7 +87,7 @@ subprocess.run([binary, "arc", "create", "smoke/iso", "--out", "smoke/tree.zip"]
 
 captured = {}
 for key, args in COMMANDS.items():
-    result = subprocess.run([binary] + args, capture_output=True, text=True)
+    result = subprocess.run([binary] + args, capture_output=True, text=True, encoding="utf-8")
     if result.returncode != 0:
         sys.exit("{} failed: {}".format(key, result.stderr.strip()))
     captured[key] = result.stdout.rstrip("\n")

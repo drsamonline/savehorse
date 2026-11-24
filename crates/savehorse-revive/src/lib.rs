@@ -259,7 +259,7 @@ pub fn scan_file(
     let recovered: usize = artifacts.iter().map(|a| a.length_bytes).sum();
 
     Ok(ScanSummary {
-        source_file: path.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&path),
         total_scanned_bytes: buffer.len(),
         artifacts_found: artifacts.len(),
         total_recovered_bytes: recovered,
@@ -292,12 +292,12 @@ pub fn carve_file(
         let start = artifact.offset_bytes;
         let end = start + artifact.length_bytes;
         fs::write(&dest, &buffer[start..end])?;
-        artifact.saved_filename = Some(dest.to_string_lossy().to_string());
+        artifact.saved_filename = Some(savehorse_core::display_path(&dest));
         written += artifact.length_bytes;
     }
 
     Ok(ScanSummary {
-        source_file: path.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&path),
         total_scanned_bytes: buffer.len(),
         artifacts_found: artifacts.len(),
         total_recovered_bytes: written,
@@ -502,7 +502,7 @@ pub fn pack_directory(source_dir: &Path, archive_path: &Path) -> Result<PackRepo
     out.flush()?;
 
     Ok(PackReport {
-        archive_path: archive_path.to_string_lossy().to_string(),
+        archive_path: savehorse_core::display_path(&archive_path),
         files_archived: entries.len(),
         total_bytes_archived: total_bytes,
         entries,
@@ -580,7 +580,7 @@ pub fn verify_archive(archive_path: &Path) -> Result<VerifyReport> {
     }
 
     Ok(VerifyReport {
-        archive_path: archive_path.to_string_lossy().to_string(),
+        archive_path: savehorse_core::display_path(&archive_path),
         total_files: results.len(),
         valid_files: valid,
         corrupted_files: corrupt,
@@ -624,8 +624,8 @@ pub fn unpack_archive(archive_path: &Path, dest_dir: &Path) -> Result<UnpackRepo
     }
 
     Ok(UnpackReport {
-        archive_path: archive_path.to_string_lossy().to_string(),
-        destination_directory: dest_dir.to_string_lossy().to_string(),
+        archive_path: savehorse_core::display_path(&archive_path),
+        destination_directory: dest_savehorse_core::display_path(&dir),
         files_extracted: extracted,
         total_bytes_extracted: total,
     })
@@ -689,7 +689,7 @@ pub fn scan_disk_image(path: &Path) -> Result<DiskScanReport> {
     };
 
     Ok(DiskScanReport {
-        target_file: path.to_string_lossy().to_string(),
+        target_file: savehorse_core::display_path(&path),
         total_bytes: total_size,
         total_sectors,
         partition_scheme: scheme,

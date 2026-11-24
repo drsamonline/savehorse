@@ -186,7 +186,7 @@ pub fn inspect(path: &Path) -> Result<MediaMetadata> {
     };
 
     Ok(MediaMetadata {
-        file_path: path.to_string_lossy().to_string(),
+        file_path: savehorse_core::display_path(&path),
         container_format: container,
         channels,
         sample_rate,
@@ -263,7 +263,7 @@ pub fn synthesize(
     fs::write(out_path, &out)?;
 
     Ok(SynthReport {
-        output_file: out_path.to_string_lossy().to_string(),
+        output_file: out_savehorse_core::display_path(&path),
         frequency_hz,
         duration_seconds: duration_secs,
         sample_rate,
@@ -316,7 +316,7 @@ pub fn write_tag(path: &Path, title: &str, artist: &str, album: &str, year: &str
     drop(file);
 
     Ok(TagReport {
-        file: path.to_string_lossy().to_string(),
+        file: savehorse_core::display_path(&path),
         title: title.chars().take(30).collect(),
         artist: artist.chars().take(30).collect(),
         album: album.chars().take(30).collect(),
@@ -370,8 +370,8 @@ pub fn apply_gain(source: &Path, destination: &Path, multiplier: f64) -> Result<
     fs::write(destination, &out)?;
 
     Ok(GainReport {
-        source_file: source.to_string_lossy().to_string(),
-        destination_file: destination.to_string_lossy().to_string(),
+        source_file: savehorse_core::display_path(&source),
+        destination_file: savehorse_core::display_path(&destination),
         gain_multiplier: multiplier,
         samples_processed: processed,
         samples_clipped: clipped,

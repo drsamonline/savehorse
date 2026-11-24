@@ -251,10 +251,10 @@ fn plan(paths: &[PathBuf], options: &RenameOptions) -> Result<Vec<RenameItem>> {
         };
 
         let changed = original_name != new_name;
-        let new_path = parent.join(&new_name).to_string_lossy().to_string();
+        let new_path = savehorse_core::display_path(parent.join(&new_name));
 
         planned.push(RenameItem {
-            original_path: file.to_string_lossy().to_string(),
+            original_path: savehorse_core::display_path(&file),
             original_name,
             new_name,
             new_path,
