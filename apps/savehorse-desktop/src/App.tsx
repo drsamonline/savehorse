@@ -390,7 +390,7 @@ export default function App() {
           />
         </section>
 
-        <ResultPane result={result} error={error} ms={ms} running={running} />
+        <ResultPane result={result} error={error} ms={ms} running={running} moduleName={activeModule} />
       </div>
 
       <JobDock jobs={jobs} onReplay={replay} />

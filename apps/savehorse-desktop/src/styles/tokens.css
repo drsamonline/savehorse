@@ -44,6 +44,18 @@
   --radius: 8px;
   --radius-lg: 12px;
 
+  /* Depth. Every raised surface is a pane of dark glass: a faint inner
+     highlight along the top edge, a soft drop shadow beneath, and a hairline
+     border that is lighter than the fill. Flat rectangles read as a web form;
+     these read as an instrument. */
+  --edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --lift-lg: 0 2px 4px rgba(0, 0, 0, 0.45), 0 24px 48px -20px rgba(0, 0, 0, 0.8);
+
+  /* The module colour as light rather than as paint. */
+  --glow: 0 0 0 1px color-mix(in srgb, var(--module) 26%, transparent),
+    0 0 22px -6px color-mix(in srgb, var(--module) 45%, transparent);
+
   /* Per-module accent. Assigned from a fixed ramp so a module always has the
      same colour, and the chrome never has to change. */
   --module: var(--signal);

@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import type { RunResult } from "../lib/types";
+import { moduleIcon } from "../lib/icons";
 
 interface Props {
   result: RunResult | null;
   error: string | null;
   ms: number | null;
   running: boolean;
+  /** The active module, so an empty pane still says whose it is. */
+  moduleName?: string;
 }
 
 /** The result pane. Text for a person, JSON for whatever comes next — the same
  *  operation produces both, so the pane can show either without re-running. */
-export function ResultPane({ result, error, ms, running }: Props) {
+export function ResultPane({ result, error, ms, running, moduleName }: Props) {
+  const moduleIconNode = moduleName ? moduleIcon(moduleName) : null;
   const [tab, setTab] = useState<"text" | "json">("text");
   const [copied, setCopied] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -92,6 +96,11 @@ export function ResultPane({ result, error, ms, running }: Props) {
         <pre className="result-body">{body}</pre>
       ) : (
         <div className="empty">
+          {moduleIconNode && (
+            <div className="empty-mark" aria-hidden="true">
+              {moduleIconNode}
+            </div>
+          )}
           <div className="big">{running ? "Working…" : "Nothing yet"}</div>
           <div className="small">
             {running

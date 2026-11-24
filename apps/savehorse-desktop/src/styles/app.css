@@ -881,3 +881,196 @@ select.input {
 
 .copy:hover { color: var(--ink); border-color: var(--line-strong); }
 
+/* ===================================================================== depth
+ *
+ * A later pass over the same interface: light, glass and a little motion, so
+ * it reads as an instrument rather than a web form. Everything here is
+ * additive — the layout, the tokens' contrast and the focus ring are
+ * unchanged, and the interface still works with motion turned off.
+ */
+
+/* The room the app sits in: a faint pool of the module colour at the top
+   left, and a vignette that keeps the corners from floating. */
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(65% 55% at 8% -12%, color-mix(in srgb, var(--module) 20%, transparent), transparent 72%),
+    radial-gradient(55% 45% at 96% -6%, rgba(90, 200, 250, 0.10), transparent 70%),
+    radial-gradient(120% 100% at 50% 130%, rgba(0, 0, 0, 0.6), transparent 55%);
+  transition: background 0.4s ease;
+}
+
+/* Everything else rides above that wash. */
+.rail, .topbar, .main, .dock, .banner { position: relative; z-index: 1; }
+
+/* Chrome as glass. */
+.topbar {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--edge);
+}
+
+.rail {
+  background: color-mix(in srgb, var(--bg-sunken) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-right: 1px solid var(--line);
+}
+
+/* The rail button is the loudest piece of chrome: it glows in its own colour
+   when it is the active module. */
+.rail-btn {
+  position: relative;
+  transition: color 0.16s, background 0.16s, transform 0.16s, box-shadow 0.16s;
+}
+
+.rail-btn:hover {
+  background: color-mix(in srgb, var(--module) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.rail-btn[data-active="true"] {
+  color: var(--module);
+  background: color-mix(in srgb, var(--module) 16%, transparent);
+  box-shadow: var(--glow);
+}
+
+.rail-btn[data-active="true"] svg {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--module) 55%, transparent));
+}
+
+/* A hairline of the module colour down the rail's active edge. */
+.rail-btn[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 22%;
+  bottom: 22%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--module);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--module) 70%, transparent);
+}
+
+/* Panels: dark glass with an inner highlight, and an edge that catches light. */
+.panel {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 70%, transparent),
+    transparent 160px
+  );
+  border-right: 1px solid var(--line);
+  box-shadow: var(--edge);
+}
+
+/* A lit hairline across the top of the chrome, in the active module's colour.
+   It is the one place the whole window is tinted at once. */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--module) 70%, transparent),
+    color-mix(in srgb, var(--module) 12%, transparent) 40%,
+    transparent 75%
+  );
+  transition: background 0.4s ease;
+}
+
+/* The selected operation carries a wash of its module colour, not just a bar. */
+.op-row[data-active="true"] {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--module) 13%, transparent),
+    transparent 70%
+  );
+}
+
+/* Inputs recess into the surface rather than sitting on it. */
+.input, input[type="text"], select {
+  background: var(--bg-sunken);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.input:focus, input[type="text"]:focus, select:focus {
+  border-color: color-mix(in srgb, var(--module) 55%, var(--line-strong));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 0 0 3px color-mix(in srgb, var(--module) 16%, transparent);
+}
+
+/* The primary action is the one thing allowed to glow. */
+.run {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--module) 40%, transparent),
+    0 6px 18px -8px color-mix(in srgb, var(--module) 60%, transparent);
+}
+
+.run:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--module) 60%, transparent),
+    0 8px 26px -8px color-mix(in srgb, var(--module) 80%, transparent);
+}
+
+.run:disabled {
+  box-shadow: none;
+}
+
+/* The command echo reads as a terminal line, so it gets terminal treatment. */
+.cli-echo {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Job rows pick up a little light on hover, so history is browsable. */
+.job:hover, .dock-row:hover {
+  background: color-mix(in srgb, var(--module) 7%, transparent);
+}
+
+/* The dock is a strip of history, separated by a lit hairline. */
+.dock {
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-sunken) 70%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--edge);
+}
+
+/* The result pane floats above the page, and its empty space has structure:
+   a dot grid at 3% so a blank pane reads as a surface rather than a void. */
+.result {
+  background-color: color-mix(in srgb, var(--bg) 55%, transparent);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+  box-shadow: inset 1px 0 0 var(--line);
+}
+
+/* Reduced motion: keep the light, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .rail-btn:hover { transform: none; }
+  .app::before { transition: none; }
+}
+
+/* An empty result pane shows the module's mark, very faintly, so the space
+   says whose it is instead of being a void. */
+.empty-mark {
+  width: 96px;
+  height: 96px;
+  color: var(--module);
+  opacity: 0.07;
+  margin-bottom: 4px;
+}
+
+.empty-mark svg { width: 100%; height: 100%; }

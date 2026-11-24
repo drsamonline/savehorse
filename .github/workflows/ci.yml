@@ -114,6 +114,23 @@ jobs:
           if ($width -le 0 -or $height -le 0) { throw "the window has no size after snapping: ${width}x${height}" }
           Write-Host "snapped to $($after.rect.left),$($after.rect.top) ${width}x${height}"
 
+          # move takes explicit coordinates, rollup collapses to the title bar
+          cargo run --quiet -- pager move $target.handle --x 100 --y 120 --width 400 --height 300
+          $moved = cargo run --quiet -- pager list --json | ConvertFrom-Json |
+            Where-Object { $_.handle -eq $target.handle }
+          if (-not $moved) { throw "the window disappeared after moving" }
+          if ($moved.rect.left -ne 100 -or $moved.rect.top -ne 120) {
+            throw "move did not land at 100,120 - got $($moved.rect.left),$($moved.rect.top)"
+          }
+
+          cargo run --quiet -- pager rollup $target.handle --height 30
+          $rolled = cargo run --quiet -- pager list --json | ConvertFrom-Json |
+            Where-Object { $_.handle -eq $target.handle }
+          if (-not $rolled) { throw "the window disappeared after rolling up" }
+          $rolledHeight = $rolled.rect.bottom - $rolled.rect.top
+          if ($rolledHeight -ne 30) { throw "rollup left the window ${rolledHeight}px tall, wanted 30" }
+          Write-Host "moved to 100,120 and rolled up to 30px"
+
           Stop-Process -Name notepad -ErrorAction SilentlyContinue
 
       - name: Smoke test the CLI
