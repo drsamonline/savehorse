@@ -1,7 +1,7 @@
 {
   "name": "savehorse-desktop",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "The savehorse desktop app: one bench for thirteen tools.",
   "scripts": {

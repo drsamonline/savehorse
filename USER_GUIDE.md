@@ -10,6 +10,26 @@ how it is put together, the [README](README.md) covers that.
 
 ---
 
+## Keyboard
+
+| | |
+|---|---|
+| `⌘K` / `Ctrl+K` | Search every operation by name, module or what it does |
+| `↑` `↓` | Move through the results |
+| `↵` | Open the highlighted one |
+| `Esc` | Close the search |
+| `⌘↵` / `Ctrl+Enter` | Run the operation on screen |
+
+`⌘↵` follows the same rule as the button: if a required field is empty it does
+nothing, so the keyboard cannot start something the button would refuse.
+
+While an operation runs the result pane shows a bar and a clock. It is
+deliberately not a percentage — the runner returns a finished result rather
+than reporting progress, so a percentage would be invented. **Copy** takes
+whichever tab is showing, text or JSON.
+
+---
+
 ## Before you start
 
 You need a build, not a checkout. Either download a release from the
