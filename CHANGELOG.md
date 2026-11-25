@@ -4,6 +4,28 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-11-25
+
+Three things the window does better, and two guards so the interface cannot
+regress quietly.
+
+### Added
+
+- The form remembers what you typed, per operation, and restores it when you
+  come back — including across restarts. Switching tool and back no longer
+  costs you the paths you had just filled in.
+- The command palette is a real combobox: the input owns focus, rows are
+  options reached with the arrow keys, the active one is announced through
+  `aria-activedescendant`, and Tab is held inside the dialog. Previously all
+  87 rows were tab stops.
+
+### Fixed
+
+- Nothing in CI checked that the interface loads. A bundle that threw on load
+  rendered a blank window with every test green.
+- Nothing checked that it behaves either. The interface is now driven on every
+  push: form memory, `⌘↵`, and the palette keyboard are assertions.
+
 ## [0.3.0] — 2026-11-25
 
 Everything declared now runs, on every platform, in CI.
