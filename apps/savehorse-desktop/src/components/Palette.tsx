@@ -84,6 +84,10 @@ export function Palette({ modules, onPick, onClose }: Props) {
       <div
         className="palette"
         onMouseDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          // A modal with one focusable control: Tab must not walk out of it.
+          if (e.key === "Tab") e.preventDefault();
+        }}
         role="dialog"
         aria-modal="true"
         aria-label="Search operations"
@@ -95,8 +99,16 @@ export function Palette({ modules, onPick, onClose }: Props) {
           onKeyDown={onKeyDown}
           placeholder="Search operations — try shred, carve, iso, duplicate"
           aria-label="Search operations"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="palette-list"
+          aria-autocomplete="list"
+          aria-activedescendant={
+            matches.length > 0 ? `palette-opt-${cursor}` : undefined
+          }
         />
-        <div className="palette-list" ref={listRef}>
+        <div className="palette-list" ref={listRef} id="palette-list" role="listbox"
+          aria-label="Operations">
           {matches.length === 0 && (
             <div className="palette-row" style={{ color: "var(--ink-faint)" }}>
               Nothing matches “{query}”.
@@ -105,8 +117,14 @@ export function Palette({ modules, onPick, onClose }: Props) {
           {matches.map((r, i) => (
             <button
               key={`${r.module}.${r.op}`}
+              id={`palette-opt-${i}`}
               className="palette-row"
               data-active={i === cursor}
+              role="option"
+              aria-selected={i === cursor}
+              // The rows are reached with the arrow keys, not with Tab: a list
+              // of 87 tabbable buttons is a trap, not a convenience.
+              tabIndex={-1}
               onMouseEnter={() => setCursor(i)}
               onClick={() => onPick(r.module, r.op)}
             >
