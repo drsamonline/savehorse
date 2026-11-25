@@ -366,6 +366,10 @@ jobs:
           # base change would break the published site with every test green.
           python3 scripts/check_site.py
 
+          # And nothing checked that the interface actually comes up. A bundle
+          # that throws on load renders a blank window with every test green.
+          bash scripts/check_ui.sh
+
           # a planned operation must refuse, and say why.
           # Ask the manifest which operation is still planned, rather than
           # naming one here. This check went stale three times as operations
