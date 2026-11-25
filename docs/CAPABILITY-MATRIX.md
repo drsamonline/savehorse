@@ -8,6 +8,16 @@ folded into thirteen modules.
 
 
 
+## The method behind this
+
+Every guard here exists because a claim was false while the build was green.
+The approach is written up as a skill so it can be reused on the next project
+rather than rediscovered:
+
+**[`claim-verification`](https://github.com/drsamonline/skills/tree/main/skills/claim-verification)**
+— turn the claims a project makes into checks that run, and prove each guard
+fires before trusting it.
+
 ## Guards
 
 Six checks exist because each one has already caught a real mistake. Every one
